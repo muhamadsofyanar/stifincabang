@@ -35,6 +35,10 @@ if ($isVoucher && !$voucherQuantity) {
     flash('error', 'Masukkan jumlah voucher antara 1 dan 1.000.', 'error');
     redirect('/checkout?product_id=' . $productId);
 }
+if ($isVoucher && stifinVoucherTransferEnabled() && stifinLinkedPromoterCode(getDB(), (int) $_SESSION['user_id']) === null) {
+    flash('error', 'Hubungi admin untuk menautkan akun promotor STIFIn sebelum membeli voucher.', 'error');
+    redirect('/member/voucher-tes');
+}
 if ($isVoucher) {
     $product['setup_fee'] = 0;
     $product['dime_enabled'] = 0;

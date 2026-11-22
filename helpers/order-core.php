@@ -324,7 +324,7 @@ function onOrderPaid(PDO $pdo, array $order, array $opts = []): array
  */
 function onOrderPaidPostCommit(array $order, array $ctx, array $opts = []): void
 {
-    if (stifinVoucherProductId() > 0 && empty($ctx['is_booking'])) {
+    if (!stifinVoucherTransferEnabled() && stifinVoucherProductId() > 0 && empty($ctx['is_booking'])) {
         try {
             stifinDistributeVouchers(getDB());
         } catch (Throwable $error) {

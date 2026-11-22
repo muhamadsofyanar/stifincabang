@@ -114,6 +114,14 @@ try {
     error_log('cron vendor_fulfillment: ' . $e->getMessage());
 }
 
+if (stifinVoucherTransferEnabled()) {
+    try {
+        stifinProcessVoucherTransfers(getDB());
+    } catch (Throwable $e) {
+        error_log('[stifin-voucher] Antrean transfer belum bisa diproses.');
+    }
+}
+
 // 5. Waitlist Launch — auto-launch produk terjadwal + blast notif ke pendaftar.
 try {
     $out['waitlist_launch'] = processWaitlistLaunches(100);

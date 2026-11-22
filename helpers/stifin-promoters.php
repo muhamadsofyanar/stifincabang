@@ -18,6 +18,11 @@ function stifinBranchPromoters(string $branchCode): array
 
 function stifinPromoterApiGet(string $path): string
 {
+    return stifinPromoterApiRequest($path);
+}
+
+function stifinPromoterApiRequest(string $path, ?array $payload = null): string
+{
     $baseUrl = rtrim(trim((string) getenv('STIFIN_API_BASE')), '/') ?: 'https://apro.stifin.id/api';
     $urlParts = parse_url($baseUrl);
     if (($urlParts['scheme'] ?? '') !== 'https' || empty($urlParts['host'])
@@ -38,8 +43,7 @@ function stifinPromoterApiGet(string $path): string
     }
 
     $body = '';
-    $curl = curl_init($baseUrl . $path);
-    curl_setopt_array($curl, [
+    $options = [
         CURLOPT_HTTPHEADER => $headers,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
         CURLOPT_FOLLOWLOCATION => false,
@@ -52,7 +56,14 @@ function stifinPromoterApiGet(string $path): string
             $body .= $chunk;
             return strlen($chunk);
         },
-    ]);
+    ];
+    if ($payload !== null) {
+        $options[CURLOPT_HTTPHEADER][] = 'Content-Type: application/json; charset=utf-8';
+        $options[CURLOPT_POST] = true;
+        $options[CURLOPT_POSTFIELDS] = json_encode($payload, JSON_THROW_ON_ERROR);
+    }
+    $curl = curl_init($baseUrl . $path);
+    curl_setopt_array($curl, $options);
     $received = curl_exec($curl);
     $status = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
