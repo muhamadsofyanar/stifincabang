@@ -6,6 +6,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends libcurl4-openss
     && a2enmod rewrite headers expires \
     && rm -rf /var/lib/apt/lists/*
 COPY . /var/www/html/
+RUN php -l /var/www/html/index.php \
+    && php -l /var/www/html/pages/admin/stifin-office.php \
+    && php -l /var/www/html/pages/admin/stifin-participants.php \
+    && php -l /var/www/html/pages/admin/stifin-reports.php \
+    && php -l /var/www/html/pages/user/stifin-office.php \
+    && php -l /var/www/html/scripts/setup-stifin-office.php
 COPY docker/entrypoint.sh /usr/local/bin/stifin-entrypoint
 RUN chmod +x /usr/local/bin/stifin-entrypoint \
     && mkdir -p /var/www/html/assets/uploads /var/www/html/storage/downloads /var/www/html/storage/ticket-attachments /var/www/html/storage/update-tmp /var/www/html/backups /data \

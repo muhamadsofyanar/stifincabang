@@ -5,10 +5,10 @@ Pembaruan ini menambahkan pusat navigasi operasional dan registrasi tes lokal. M
 ## Pemasangan pada instalasi yang sudah aktif
 
 1. Cadangkan database dan volume aplikasi. Jangan menjalankan ulang installer.
-2. Commit file yang berubah ke repositori dan deploy melalui Coolify.
-3. Pada terminal container aplikasi, jalankan `php /var/www/html/scripts/setup-stifin-office.php` satu kali (aman jika diulang).
+2. Ekstrak paket update. Salin isinya ke root repositori (`index.php`, `Dockerfile`, `pages/`, `scripts/`, bukan subfolder `stifincabang-main/`). Commit pada branch `main`. Pastikan GitHub menampilkan SHA baru, bukan `7361c753d892f1540502855e50e2df9f4cb0629f`.
+3. Redeploy SHA baru melalui Coolify. Build memeriksa sintaks PHP; entrypoint menjalankan migrasi pada instalasi aktif. Jika migrasi gagal, periksa log, lalu jalankan `php /var/www/html/scripts/setup-stifin-office.php` dari terminal container aplikasi setelah masalah database diperbaiki (aman jika diulang).
 4. Pastikan `STIFIN_BRANCH_CODE` sesuai kode cabang resmi. Tautkan promotor melalui menu Promotor Cabang.
-5. Login sebagai admin; buka `/admin/kantor-cabang` dan `/admin/peserta-tes`.
+5. Login sebagai admin; buka `/admin/kantor-cabang`, `/admin/peserta-tes`, `/admin/laporan-cabang`. Login sebagai promotor tertaut; buka `/member/stifin-saya`.
 
 ## Uji penerimaan (staging)
 
