@@ -11,6 +11,13 @@ function stifinBranchPromoters(string $branchCode): array
         throw new RuntimeException('Isi STIFIN_BRANCH_CODE dengan kode cabang resmi.');
     }
 
+    return stifinPromoterDirectory(
+        stifinPromoterApiGet('/proGetCab/pro/' . rawurlencode($branchCode)), $branchCode
+    );
+}
+
+function stifinPromoterApiGet(string $path): string
+{
     $baseUrl = rtrim(trim((string) getenv('STIFIN_API_BASE')), '/') ?: 'https://apro.stifin.id/api';
     $urlParts = parse_url($baseUrl);
     if (($urlParts['scheme'] ?? '') !== 'https' || empty($urlParts['host'])
@@ -31,7 +38,7 @@ function stifinBranchPromoters(string $branchCode): array
     }
 
     $body = '';
-    $curl = curl_init($baseUrl . '/proGetCab/pro/' . rawurlencode($branchCode));
+    $curl = curl_init($baseUrl . $path);
     curl_setopt_array($curl, [
         CURLOPT_HTTPHEADER => $headers,
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
@@ -57,7 +64,7 @@ function stifinBranchPromoters(string $branchCode): array
         throw new RuntimeException('API STIFIn mengembalikan HTTP ' . $status . '.');
     }
 
-    return stifinPromoterDirectory($body, $branchCode);
+    return $body;
 }
 
 function stifinPromoterDirectory(string $body, string $branchCode): array
@@ -84,6 +91,7 @@ function stifinPromoterDirectory(string $body, string $branchCode): array
         $status = $row['Aktif'] ?? $row['active'] ?? null;
         $promoters[$code] = [
             'code' => $code,
+            'email' => strtolower(trim(stifinPromoterText($row['Email'] ?? $row['email'] ?? '', 500))),
             'name' => $name,
             'area' => stifinPromoterText($row['Area'] ?? $row['area'] ?? '', 120),
             'province' => stifinPromoterText($row['Propinsi'] ?? $row['province'] ?? '', 120),
@@ -102,4 +110,100 @@ function stifinPromoterDirectory(string $body, string $branchCode): array
 function stifinPromoterText(mixed $value, int $maxLength): string
 {
     return is_scalar($value) ? mb_substr(trim((string) $value), 0, $maxLength) : '';
+}
+
+function stifinPromoterBalance(string $code): array
+{
+    $data = json_decode(stifinPromoterApiGet('/voucherGet/getTotVoucher/' . rawurlencode($code)), true);
+    if (!is_array($data)) {
+        throw new RuntimeException('Format saldo voucher STIFIn tidak dikenali.');
+    }
+
+    $voucherKeys = ['voucher', 'saldoj', 'jumlah', 'jmlvoucher', 'totvoucher', 'totvou', 'totalvoucher', 'jmlvou'];
+    $freeKeys = ['free', 'saldof', 'jmlfree', 'totfree', 'totfre', 'totalfree'];
+    $balances = ['voucher' => null, 'free' => null];
+    $queue = [$data];
+    while ($queue) {
+        foreach (array_pop($queue) as $key => $value) {
+            if (is_array($value)) {
+                $queue[] = $value;
+                continue;
+            }
+            $number = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+            if ($number === false || is_bool($value)) {
+                continue;
+            }
+            $key = strtolower((string) $key);
+            if (in_array($key, $voucherKeys, true)) {
+                $balances['voucher'] ??= $number;
+            }
+            if (in_array($key, $freeKeys, true)) {
+                $balances['free'] ??= $number;
+            }
+        }
+    }
+
+    $list = $data['data'] ?? $data;
+    if ($balances['voucher'] === null && is_array($list) && array_is_list($list) && in_array(count($list), [1, 2], true)) {
+        $numbers = array_map(static fn ($value) => is_scalar($value) && !is_bool($value)
+            ? filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) : false, $list);
+        if (!in_array(false, $numbers, true)) {
+            $balances = count($numbers) === 2
+                ? ['free' => $numbers[0], 'voucher' => $numbers[1]]
+                : ['free' => null, 'voucher' => $numbers[0]];
+        }
+    }
+    if ($balances['voucher'] === null) {
+        throw new RuntimeException('Nilai saldo voucher tidak ditemukan pada respons STIFIn.');
+    }
+    return $balances;
+}
+
+function stifinPromoterImport(PDO $pdo, string $branch, array $promoters, array $codes): array
+{
+    $byCode = array_column($promoters, null, 'code');
+    $emailCounts = array_count_values(array_column($promoters, 'email'));
+    $result = ['created' => 0, 'skipped' => 0];
+    $findCode = $pdo->prepare('SELECT 1 FROM stifin_promoter_accounts WHERE branch_code = ? AND promoter_code = ?');
+    $findEmail = $pdo->prepare('SELECT 1 FROM users WHERE email = ?');
+    $insertUser = $pdo->prepare(
+        "INSERT INTO users (name, email, password, affiliate_code, role, status) VALUES (?, ?, ?, ?, 'user', 'active')"
+    );
+    $linkUser = $pdo->prepare('INSERT INTO stifin_promoter_accounts (branch_code, promoter_code, user_id) VALUES (?, ?, ?)');
+
+    foreach (array_unique(array_filter($codes, 'is_string')) as $code) {
+        $row = $byCode[$code] ?? null;
+        $email = $row['email'] ?? '';
+        if (($row['active'] ?? null) !== true || strlen($email) > 150
+            || !filter_var($email, FILTER_VALIDATE_EMAIL) || ($emailCounts[$email] ?? 0) !== 1) {
+            $result['skipped']++;
+            continue;
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $findCode->execute([$branch, $code]);
+            $findEmail->execute([$email]);
+            if ($findCode->fetchColumn() || $findEmail->fetchColumn()) {
+                $pdo->rollBack();
+                $result['skipped']++;
+                continue;
+            }
+            $insertUser->execute([
+                mb_substr($row['name'], 0, 100), $email,
+                password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT), bin2hex(random_bytes(8)),
+            ]);
+            $linkUser->execute([$branch, $code, (int) $pdo->lastInsertId()]);
+            $pdo->commit();
+            $result['created']++;
+        } catch (Throwable $error) {
+            $pdo->rollBack();
+            if ($error instanceof PDOException && (int) ($error->errorInfo[1] ?? 0) === 1062) {
+                $result['skipped']++;
+                continue;
+            }
+            throw $error;
+        }
+    }
+    return $result;
 }

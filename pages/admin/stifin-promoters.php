@@ -13,6 +13,36 @@ try {
 } catch (RuntimeException $error) {
     $directoryError = $error->getMessage();
 }
+$message = '';
+$actionError = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $directoryError === '') {
+    try {
+        if (!validateCSRF($_POST['csrf_token'] ?? '')) {
+            throw new RuntimeException('Token keamanan tidak valid. Muat ulang halaman.');
+        }
+        if (isset($_POST['balance'])) {
+            $code = (string) $_POST['balance'];
+            if (!in_array($code, array_column($promoters, 'code'), true)) {
+                throw new RuntimeException('Kode promotor tidak terdaftar di cabang ini.');
+            }
+            $balance = stifinPromoterBalance($code);
+            $message = $code . ' · Voucher ' . $balance['voucher'] . ' · Free ' . ($balance['free'] ?? '—');
+        } elseif (isset($_POST['import'])) {
+            $codes = is_array($_POST['codes'] ?? null) ? $_POST['codes'] : [];
+            if (!$codes) {
+                throw new RuntimeException('Pilih akun promotor yang akan diimpor.');
+            }
+            $result = stifinPromoterImport(getDB(), $branchCode, $promoters, $codes);
+            $message = $result['created'] . ' akun dibuat, ' . $result['skipped'] . ' dilewati. '
+                . 'Promotor dapat membuat password melalui halaman Lupa Password.';
+        }
+    } catch (PDOException $error) {
+        error_log('STIFIn promoter database error: ' . $error->getCode());
+        $actionError = 'Impor database terhenti. Periksa migrasi tabel akun promotor, lalu coba lagi.';
+    } catch (RuntimeException $error) {
+        $actionError = $error->getMessage();
+    }
+}
 include __DIR__ . '/../../partials/head.php';
 ?>
 <body class="bg-gray-50 dark:bg-gray-950 antialiased">
@@ -26,36 +56,53 @@ include __DIR__ . '/../../partials/head.php';
         <?php if ($branchCode !== ''): ?>
           <p>Kode cabang <strong><?= e($branchCode) ?></strong></p>
         <?php endif; ?>
+        <?php if ($message !== ''): ?><p role="status"><?= e($message) ?></p><?php endif; ?>
+        <?php if ($actionError !== ''): ?><p role="alert"><?= e($actionError) ?></p><?php endif; ?>
         <?php if ($directoryError !== ''): ?>
           <p role="alert"><?= e($directoryError) ?></p>
         <?php elseif ($promoters === []): ?>
           <p>API STIFIn belum mengembalikan promotor untuk cabang ini.</p>
         <?php else: ?>
           <p><?= count($promoters) ?> promotor dari direktori STIFIn</p>
+          <form method="post" class="space-y-3">
+          <input type="hidden" name="csrf_token" value="<?= e(generateCSRF()) ?>">
+          <p>Email yang sudah terdaftar, ganda, atau tidak valid akan dilewati.</p>
           <div class="overflow-x-auto rounded-xl border bg-white dark:bg-gray-900">
             <table class="w-full text-left text-sm">
               <thead>
                 <tr>
+                  <th scope="col" class="p-3">Pilih</th>
                   <th scope="col" class="p-3">Nama</th>
                   <th scope="col" class="p-3">Kode promotor</th>
                   <th scope="col" class="p-3">Area</th>
                   <th scope="col" class="p-3">Provinsi</th>
                   <th scope="col" class="p-3">Status di STIFIn</th>
+                  <th scope="col" class="p-3">Email</th>
+                  <th scope="col" class="p-3">Voucher</th>
                 </tr>
               </thead>
               <tbody>
                 <?php foreach ($promoters as $promoter): ?>
                   <tr class="border-t">
+                    <td class="p-3">
+                      <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
+                        <input type="checkbox" name="codes[]" value="<?= e($promoter['code']) ?>" aria-label="Pilih <?= e($promoter['name']) ?>">
+                      <?php endif; ?>
+                    </td>
                     <td class="p-3"><?= e($promoter['name']) ?></td>
                     <td class="p-3"><?= e($promoter['code']) ?></td>
                     <td class="p-3"><?= e($promoter['area'] ?: '—') ?></td>
                     <td class="p-3"><?= e($promoter['province'] ?: '—') ?></td>
                     <td class="p-3"><?= $promoter['active'] === null ? '—' : ($promoter['active'] ? 'Aktif' : 'Nonaktif') ?></td>
+                    <td class="p-3"><?= e($promoter['email'] ?: '—') ?></td>
+                    <td class="p-3"><button class="underline" type="submit" name="balance" value="<?= e($promoter['code']) ?>">Cek saldo</button></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
             </table>
           </div>
+          <button type="submit" name="import" value="1" class="rounded-lg bg-emerald-800 px-4 py-2 text-white">Impor akun terpilih</button>
+          </form>
         <?php endif; ?>
       </div>
     </main>
