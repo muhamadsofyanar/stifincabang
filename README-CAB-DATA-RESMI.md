@@ -31,3 +31,7 @@ Promotor yang tertaut ke akun Mulia dan berstatus aktif di direktori resmi dapat
 ## Operasional dan voucher
 
 Kantor Virtual Cabang menampilkan pendaftaran menunggu jadwal, tes terjadwal, voucher yang perlu diperiksa, dan akses langsung ke modul kerja. Antrean voucher tetap mengikuti pengaturan Coolify yang ada. Ketika transfer aktif, worker memverifikasi keanggotaan promotor di direktori resmi sebelum pengiriman, memeriksa penolakan API, dan hanya mencatat terkirim setelah saldo cocok. Periksa status **Perlu dicek** berdasarkan nomor invoice di App Cabang. Uji dengan lingkungan dan akun uji yang sesuai sebelum mengaktifkan transfer nyata.
+
+## Sinkronisasi hasil tes lewat API
+
+Buka **Data Resmi App Cabang → Hasil tes resmi**, pilih bulan, klik **Tampilkan** lalu **Sinkronkan hasil tes**. Mulia meminta laporan bulanan untuk cabang dari `STIFIN_BRANCH_CODE`. Mulia menyimpan referensi, kode hasil, kode promotor jika format referensinya dikenali, dan tanggal tes yang valid atau periode laporan. Respons yang jumlahnya berbeda dari total API tidak disimpan. Sinkronisasi ulang memperbarui referensi yang sama. Hasil yang tidak tercantum pada respons berikutnya tetap tersimpan. Rekap yang sudah diimpor diutamakan dibanding rekap berdasarkan hasil yang tersimpan.

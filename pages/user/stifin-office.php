@@ -39,7 +39,7 @@ if ($profile !== null && $profile['active'] === true) {
     try {
         $monthStart = new DateTimeImmutable($reportMonth . '-01');
         $reportQuery = getDB()->prepare(
-            "SELECT source_ref, report_date, report_value, COUNT(*) OVER () AS total_rows
+            "SELECT source_ref, report_date, report_value, period_only, COUNT(*) OVER () AS total_rows
              FROM stifin_official_report_rows
              WHERE branch_code = ? AND promoter_code = ? AND report_type = 'hasil'
                AND report_date >= ? AND report_date < ?
@@ -80,12 +80,12 @@ include __DIR__ . '/../../partials/head.php';
             <?php if ($totalResults > 100): ?><p>Menampilkan 100 hasil terbaru.</p><?php endif; ?>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
-                    <thead><tr><th>Referensi</th><th>Tanggal</th><th>Hasil</th></tr></thead>
+                    <thead><tr><th>Referensi</th><th>Tanggal / periode</th><th>Hasil</th></tr></thead>
                     <tbody>
                     <?php foreach ($reportRows as $result): ?>
                         <tr class="border-t">
                             <td><?= e($result['source_ref']) ?></td>
-                            <td><?= e($result['report_date']) ?></td>
+                            <td><?= e((int) $result['period_only'] ? substr($result['report_date'], 0, 7) : $result['report_date']) ?></td>
                             <td><?= e($result['report_value']) ?></td>
                         </tr>
                     <?php endforeach; ?>

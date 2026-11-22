@@ -9,3 +9,6 @@ CREATE TABLE IF NOT EXISTS stifin_official_report_rows (
     PRIMARY KEY (branch_code, report_type, source_ref),
     KEY report_period (branch_code, report_type, report_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE stifin_official_report_rows
+    ADD COLUMN IF NOT EXISTS period_only TINYINT UNSIGNED NOT NULL DEFAULT 0;

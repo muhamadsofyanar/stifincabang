@@ -46,6 +46,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_string($token) || !validateCSRF($token) || $branch === '') {
             throw new InvalidArgumentException('Sesi atau konfigurasi cabang belum siap.');
         }
+        if (($_POST['operation'] ?? null) === 'sync-result' && $type === 'hasil') {
+            $start = new DateTimeImmutable($month . '-01');
+            $pathForMonth = '/print/repHasCab/1/' . $start->format('Y-m-j') . '/'
+                . $start->modify('last day of this month')->format('Y-m-d') . '/' . rawurlencode($branch);
+            $rows = stifinOfficialApiResultRows(stifinPromoterApiGet($pathForMonth), $start);
+            if ($rows) {
+                stifinSaveOfficialRows(getDB(), $branch, 'hasil', $rows);
+            }
+            $_SESSION['stifin_result_sync'] = ['month' => $month, 'count' => count($rows)];
+            header('Location: ' . $base . '&bulan=' . $month, true, 303);
+            exit;
+        }
         $file = $_FILES['csv'] ?? [];
         if (($file['error'] ?? null) !== UPLOAD_ERR_OK || $file['size'] > 2 * 1024 * 1024
             || !is_uploaded_file($file['tmp_name'])) {
@@ -72,17 +84,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         http_response_code(422);
         $message = $error->getMessage();
     } catch (Throwable $error) {
-        $message = 'Impor gagal. Periksa konfigurasi database dan status migrasi.';
+        $message = ($_POST['operation'] ?? null) === 'sync-result'
+            ? 'Sinkronisasi gagal. Periksa koneksi API dan status migrasi.'
+            : 'Impor gagal. Periksa konfigurasi database dan status migrasi.';
         error_log('STIFIn official CSV import failed');
     }
 }
 
+$syncNotice = null;
+if ($type === 'hasil') {
+    $lastSync = $_SESSION['stifin_result_sync'] ?? null;
+    unset($_SESSION['stifin_result_sync']);
+    if (is_array($lastSync) && $lastSync['month'] === $month) {
+        $syncNotice = $lastSync['count'];
+    }
+}
 $rows = null;
 $derivedRecap = [];
 if ($branch !== '') {
     try {
         $start = new DateTimeImmutable($month . '-01');
-        $query = getDB()->prepare('SELECT source_ref, report_date, promoter_code, report_value, imported_at
+        $query = getDB()->prepare('SELECT source_ref, report_date, promoter_code, report_value, imported_at, period_only
             FROM stifin_official_report_rows WHERE branch_code = ? AND report_type = ?
             AND report_date >= ? AND report_date < ? ORDER BY report_date DESC, source_ref LIMIT 101 OFFSET ?');
         $query->bindValue(1, $branch);
@@ -127,7 +149,17 @@ include __DIR__ . '/../../partials/head.php';
             </nav>
             <section class="rounded-xl border p-5 bg-white dark:bg-gray-900 space-y-3">
                 <h2 class="font-bold"><?= e($label) ?> · <?= e($branch ?: 'Cabang belum dikonfigurasi') ?></h2>
-                <p>Data diperbarui melalui impor CSV admin.</p>
+                <?php if ($type === 'hasil' && $branch !== ''): ?>
+                    <form method="post" action="<?= e($base . '&bulan=' . $month) ?>">
+                        <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
+                        <button class="rounded-lg bg-emerald-900 px-4 py-2 text-white" name="operation" value="sync-result">Sinkronkan hasil tes <?= e($month) ?></button>
+                    </form>
+                    <?php if ($syncNotice !== null): ?>
+                        <p role="status"><?= (int) $syncNotice ?> hasil diterima dari STIFIn untuk <?= e($month) ?>.</p>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <p>Admin dapat memperbarui laporan dengan impor CSV.</p>
+                <?php endif; ?>
                 <div class="flex flex-wrap gap-4">
                     <a class="underline" href="<?= e($source . $path) ?>" target="_blank" rel="noopener noreferrer">Buka laporan di App Cabang</a>
                     <a class="underline" href="<?= e($base . '&template=1') ?>">Unduh template CSV</a>
@@ -176,11 +208,15 @@ include __DIR__ . '/../../partials/head.php';
                     <?php endif; ?>
                 <?php else: ?>
                     <table class="w-full text-left">
-                        <thead><tr><th>Referensi</th><th>Tanggal</th><th>Promotor</th><th><?= e(ucfirst(str_replace('_', ' ', $column))) ?></th><th>Diimpor</th></tr></thead>
+                        <thead><tr><th>Referensi</th><th>Tanggal / periode</th><th>Promotor</th><th><?= e(ucfirst(str_replace('_', ' ', $column))) ?></th><th>Diimpor</th></tr></thead>
                         <tbody>
                         <?php foreach (array_slice($rows, 0, 100) as $row): ?>
                             <tr class="border-t">
-                                <?php foreach ($row as $value): ?><td><?= e($value) ?></td><?php endforeach; ?>
+                                <td><?= e($row['source_ref']) ?></td>
+                                <td><?= e((int) $row['period_only'] ? substr($row['report_date'], 0, 7) : $row['report_date']) ?></td>
+                                <td><?= e($row['promoter_code']) ?></td>
+                                <td><?= e($row['report_value']) ?></td>
+                                <td><?= e($row['imported_at']) ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
