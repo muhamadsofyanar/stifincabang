@@ -19,3 +19,9 @@ Setiap impor menampung maksimal 5.000 catatan dan 2 MB. Catatan dengan referensi
 ## Akun resmi
 
 Menu akun menyediakan tautan perubahan password dan pengelolaan password promotor di App Cabang. Perubahan User ID Pusat, perubahan password melalui Mulia, pengiriman voucher ke Pusat, serta sinkronisasi otomatis memerlukan kontrak API dan izin dari pengelola STIFIn. Rute yang terlihat di navigasi App Cabang adalah rute antarmuka pengguna. Template impor ini mengikuti kebutuhan Mulia dan belum dicocokkan dengan berkas ekspor aktual dari Pusat.
+
+Jika bulan yang dipilih belum memiliki rekap impor, tab rekap menampilkan jumlah dari hasil tes yang sudah diimpor, dikelompokkan per promotor. Rekap yang diimpor untuk bulan tersebut diutamakan. Impor yang berisi satu bulan langsung membuka bulan tersebut.
+
+## Direktori promotor
+
+Halaman **Promotor Cabang** menyediakan pencarian nama, kode, area dan lembaga, serta filter promotor aktif dan promotor aktif tanpa akses Mulia. Status akses memakai penautan yang sudah ada dan status akun anggota di Mulia. Ekspor direktori tetap mencakup seluruh daftar cabang. Cek saldo tetap dilakukan untuk promotor yang dipilih.

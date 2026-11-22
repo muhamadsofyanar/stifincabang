@@ -59,6 +59,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $directoryError === '') {
         $actionError = $error->getMessage();
     }
 }
+$linkedCodes = null;
+if ($promoters) {
+    try {
+        $query = getDB()->prepare("SELECT a.promoter_code FROM stifin_promoter_accounts a
+            JOIN users u ON u.id = a.user_id AND u.role = 'user' AND u.status = 'active'
+            WHERE a.branch_code = ?");
+        $query->execute([$branchCode]);
+        $linkedCodes = array_fill_keys($query->fetchAll(PDO::FETCH_COLUMN), true);
+    } catch (PDOException $error) {
+        error_log('STIFIn promoter account status unavailable');
+    }
+}
+$search = is_string($_GET['q'] ?? null) ? stifinPromoterText($_GET['q'], 120) : '';
+$filter = $_GET['status'] ?? '';
+if (!in_array($filter, ['aktif', 'perlu-akun'], true) || ($filter === 'perlu-akun' && $linkedCodes === null)) {
+    $filter = '';
+}
+$visiblePromoters = [];
+$activeCount = $linkedCount = $needsAccountCount = 0;
+foreach ($promoters as $promoter) {
+    $active = $promoter['active'] === true;
+    $linked = isset($linkedCodes[$promoter['code']]);
+    $needsAccount = $linkedCodes !== null && $active && !$linked;
+    $activeCount += (int) $active;
+    $linkedCount += (int) $linked;
+    $needsAccountCount += (int) $needsAccount;
+    if (($filter === 'aktif' && !$active) || ($filter === 'perlu-akun' && !$needsAccount)) {
+        continue;
+    }
+    $matches = implode(' ', [$promoter['name'], $promoter['code'], $promoter['area'], $promoter['institution']]);
+    if ($search === '' || mb_stripos($matches, $search) !== false) {
+        $visiblePromoters[] = $promoter;
+    }
+}
 include __DIR__ . '/../../partials/head.php';
 ?>
 <body class="bg-gray-50 dark:bg-gray-950 antialiased">
@@ -79,7 +113,30 @@ include __DIR__ . '/../../partials/head.php';
         <?php elseif ($promoters === []): ?>
           <p>API STIFIn belum mengembalikan promotor untuk cabang ini.</p>
         <?php else: ?>
-          <p><?= count($promoters) ?> promotor dari direktori STIFIn · Koneksi direktori berhasil</p>
+          <p><?= count($promoters) ?> promotor dari STIFIn · <?= $activeCount ?> aktif
+            <?php if ($linkedCodes !== null): ?>
+              · <?= $linkedCount ?> punya akun Mulia aktif · <?= $needsAccountCount ?> promotor aktif belum punya akses Mulia
+            <?php endif; ?>
+          </p>
+          <?php if ($linkedCodes === null): ?><p>Status akun Mulia sedang tidak tersedia.</p><?php endif; ?>
+          <form method="get" class="flex flex-wrap items-end gap-3">
+            <label>Cari promotor
+              <input class="block rounded border p-2 dark:bg-gray-950" name="q" value="<?= e($search) ?>"
+                     placeholder="Nama, kode, area, lembaga" maxlength="120">
+            </label>
+            <label>Status
+              <select class="block rounded border p-2 dark:bg-gray-950" name="status">
+                <option value="">Semua</option>
+                <option value="aktif" <?= $filter === 'aktif' ? 'selected' : '' ?>>Aktif di STIFIn</option>
+                <?php if ($linkedCodes !== null): ?>
+                  <option value="perlu-akun" <?= $filter === 'perlu-akun' ? 'selected' : '' ?>>Aktif tanpa akses Mulia</option>
+                <?php endif; ?>
+              </select>
+            </label>
+            <button class="rounded border p-2">Tampilkan</button>
+            <a class="underline" href="<?= e(APP_URL) ?>/admin/promotor-cabang">Hapus filter</a>
+          </form>
+          <p><?= count($visiblePromoters) ?> promotor ditampilkan.</p>
           <div class="flex flex-wrap gap-3"><a class="rounded border p-2" href="?export=csv">Unduh direktori CSV</a><button type="button" class="rounded border p-2" onclick="window.print()">Cetak / PDF</button></div>
           <form method="post" class="space-y-3">
           <input type="hidden" name="csrf_token" value="<?= e(generateCSRF()) ?>">
@@ -106,10 +163,13 @@ include __DIR__ . '/../../partials/head.php';
                 </tr>
               </thead>
               <tbody>
-                <?php foreach ($promoters as $promoter): ?>
+                <?php if (!$visiblePromoters): ?>
+                  <tr><td colspan="11" class="p-3">Tidak ada promotor yang cocok dengan filter.</td></tr>
+                <?php endif; ?>
+                <?php foreach ($visiblePromoters as $promoter): $linked = isset($linkedCodes[$promoter['code']]); ?>
                   <tr class="border-t">
                     <td class="p-3">
-                      <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
+                      <?php if (!$linked && $promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
                         <input type="checkbox" name="codes[]" value="<?= e($promoter['code']) ?>" aria-label="Pilih <?= e($promoter['name']) ?>">
                       <?php endif; ?>
                     </td>
@@ -123,7 +183,9 @@ include __DIR__ . '/../../partials/head.php';
                     <td class="p-3"><?= e($promoter['validity'] ?: '—') ?></td>
                     <td class="p-3"><button class="rounded-lg border px-3 py-1.5 font-medium whitespace-nowrap" type="submit" name="balance" value="<?= e($promoter['code']) ?>">Cek saldo</button></td>
                     <td class="p-3">
-                      <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
+                      <?php if ($linked): ?>
+                        <span>Aktif di Mulia</span>
+                      <?php elseif ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
                         <button class="rounded-lg border px-3 py-1.5 whitespace-nowrap" type="submit" name="link"
                                 value="<?= e($promoter['code']) ?>"
                                 onclick="return confirm('Tautkan promotor ini ke akun anggota aktif dengan email yang sama?')">Tautkan akun</button>

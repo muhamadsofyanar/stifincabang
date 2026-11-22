@@ -61,6 +61,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             fclose($stream);
         }
         stifinSaveOfficialRows(getDB(), $branch, $type, $rows);
+        $firstMonth = substr(min(array_column($rows, 1)), 0, 7);
+        $lastMonth = substr(max(array_column($rows, 1)), 0, 7);
+        if ($firstMonth === $lastMonth) {
+            $month = $firstMonth;
+        }
         header('Location: ' . $base . '&bulan=' . $month . '&impor=' . count($rows), true, 303);
         exit;
     } catch (InvalidArgumentException $error) {
@@ -73,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $rows = null;
+$derivedRecap = [];
 if ($branch !== '') {
     try {
         $start = new DateTimeImmutable($month . '-01');
@@ -86,6 +92,16 @@ if ($branch !== '') {
         $query->bindValue(5, ($page - 1) * 100, PDO::PARAM_INT);
         $query->execute();
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($type === 'rekap' && $page === 1 && !$rows) {
+            $summary = getDB()->prepare(
+                "SELECT promoter_code, COUNT(*) AS test_count FROM stifin_official_report_rows
+                 WHERE branch_code = ? AND report_type = 'hasil' AND report_date >= ? AND report_date < ?
+                 GROUP BY promoter_code ORDER BY promoter_code"
+            );
+            $summary->execute([$branch, $start->format('Y-m-d'), $start->modify('+1 month')->format('Y-m-d')]);
+            $derivedRecap = $summary->fetchAll(PDO::FETCH_ASSOC);
+        }
     } catch (Throwable $error) {
         error_log('STIFIn official report query failed');
     }
@@ -134,8 +150,26 @@ include __DIR__ . '/../../partials/head.php';
                 </form>
                 <?php if ($rows === null): ?>
                     <p>Laporan belum tersedia. Periksa konfigurasi cabang dan status migrasi.</p>
+                <?php elseif ($derivedRecap): ?>
+                    <h2 class="font-bold">Ringkasan dari hasil tes yang diimpor</h2>
+                    <p><?= array_sum(array_column($derivedRecap, 'test_count')) ?> tes tercatat pada <?= e($month) ?>. Cakupan mengikuti hasil yang sudah diimpor.</p>
+                    <table class="w-full text-left">
+                        <thead><tr><th>Promotor</th><th>Jumlah tes</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($derivedRecap as $summaryRow): ?>
+                            <tr class="border-t">
+                                <td><?= e($summaryRow['promoter_code'] ?: 'Tidak tercantum') ?></td>
+                                <td><?= (int) $summaryRow['test_count'] ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 <?php elseif (!$rows): ?>
-                    <p>Tidak ada catatan pada halaman ini.</p>
+                    <?php if ($page > 1): ?>
+                        <p>Tidak ada catatan pada halaman ini.</p>
+                    <?php else: ?>
+                        <p>Belum ada data impor untuk <?= e($month) ?>. Pilih bulan sesuai periode laporan di App Cabang atau unggah CSV.</p>
+                    <?php endif; ?>
                 <?php else: ?>
                     <table class="w-full text-left">
                         <thead><tr><th>Referensi</th><th>Tanggal</th><th>Promotor</th><th><?= e(ucfirst(str_replace('_', ' ', $column))) ?></th><th>Diimpor</th></tr></thead>
