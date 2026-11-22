@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+config.php
+installer/install.lock
+assets/uploads
+backups
+storage
+compose.yaml
+README-INSTALASI-STIFIN.md
+.github
