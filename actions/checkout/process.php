@@ -94,6 +94,15 @@ try {
         flash('error', $message, 'error');
         redirect('/checkout?product_id=' . $productId);
     }
+    if ($isVoucher && stifinVoucherTransferEnabled() && stifinLinkedPromoterCode($pdo, $userId) === null) {
+        $message = 'Hubungi admin untuk menautkan akun promotor STIFIn sebelum membeli voucher.';
+        if ($isGatewayFlow) {
+            echo json_encode(['error' => $message]);
+            exit;
+        }
+        flash('error', $message, 'error');
+        redirect('/member/voucher-tes');
+    }
 
     // Cek akses ganda — HANYA blokir produk SEKALI-BAYAR. Produk BERLANGGANAN
     // (access_duration_days !== null) boleh order lagi meski masa aktif belum habis =

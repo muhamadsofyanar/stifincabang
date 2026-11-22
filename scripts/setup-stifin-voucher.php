@@ -9,9 +9,11 @@ require __DIR__ . '/../db.php';
 require __DIR__ . '/../helpers/landing-builder.php';
 
 $pdo = getDB();
-foreach (explode(';', file_get_contents(__DIR__ . '/../migrations/stifin-vouchers.sql')) as $statement) {
-    if (trim($statement) !== '') {
-        $pdo->exec($statement);
+foreach (['stifin-vouchers.sql', 'stifin-voucher-transfers.sql'] as $migration) {
+    foreach (explode(';', file_get_contents(__DIR__ . '/../migrations/' . $migration)) as $statement) {
+        if (trim($statement) !== '') {
+            $pdo->exec($statement);
+        }
     }
 }
 

@@ -14,6 +14,11 @@ $action = $_POST['action'] ?? '';
 $added = null;
 try {
     $db = getDB();
+    if ($action === 'transfer' && stifinVoucherTransferEnabled()) {
+        stifinProcessVoucherTransfers($db);
+        flash('success', 'Antrean transfer diperiksa. Lihat hasil pada daftar transfer.');
+        redirect('/admin/voucher-tes');
+    }
     if ($action === 'import') {
         $raw = $_POST['codes'] ?? '';
         if (!is_string($raw) || strlen($raw) > 65000) {

@@ -27,6 +27,16 @@ function stifinQueuePaidVouchers(PDO $db, int $orderId, int $userId): void
     if ($quantity <= 0) {
         return;
     }
+    if (stifinVoucherTransferEnabled()) {
+        $branch = stifinPromoterBranchCode();
+        $promoter = stifinLinkedPromoterCode($db, $userId);
+        $db->prepare("INSERT INTO stifin_voucher_queue
+            (order_id, user_id, quantity, transfer_branch, transfer_promoter, transfer_status)
+            VALUES (?, ?, ?, ?, ?, 'pending')
+            ON DUPLICATE KEY UPDATE order_id = stifin_voucher_queue.order_id")
+            ->execute([$orderId, $userId, $quantity, $branch, $promoter]);
+        return;
+    }
     $db->prepare('INSERT INTO stifin_voucher_queue (order_id, user_id, quantity) VALUES (?, ?, ?)
         ON DUPLICATE KEY UPDATE order_id = stifin_voucher_queue.order_id')->execute([$orderId, $userId, $quantity]);
 }
@@ -47,12 +57,13 @@ function stifinDistributeVouchers(PDO $db): void
     }
 
     try {
+        $localOnly = stifinVoucherTransferSchema($db) ? ' AND q.transfer_status IS NULL' : '';
         for ($i = 0; $i < 100; $i++) {
             $db->beginTransaction();
             try {
                 $job = $db->query("SELECT q.id, q.quantity, q.order_id, q.user_id FROM stifin_voucher_queue q
                     JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
-                    WHERE q.fulfilled_at IS NULL AND o.status = 'paid' ORDER BY q.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                    WHERE q.fulfilled_at IS NULL AND o.status = 'paid'{$localOnly} ORDER BY q.id LIMIT 1")->fetch(PDO::FETCH_ASSOC);
                 if (!$job) {
                     $db->commit();
                     break;

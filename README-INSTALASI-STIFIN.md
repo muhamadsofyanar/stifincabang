@@ -31,6 +31,13 @@ Paket ini memakai Darmutiara Kajian 1.2.262 sebagai dasar. Installer dan aktivas
 
 Cadangkan database, data unggahan, dan konfigurasi sebelum mengganti kode. Pertahankan `.env`, project Compose, serta volume yang sudah dipakai. Isi variabel penerbit dan URL pada `.env`. Periksa juga `APP_URL` di `config.php` yang sudah ada dan pastikan menunjuk domain HTTPS final. Variabel URL dipakai oleh installer ketika membuat config baru. Jalankan ulang `docker compose up -d --build` dan aktivasi ulang dengan lisensi DRM untuk domain tersebut. Untuk database lama yang belum punya tabel Kajian, jalankan `migrations/stifin-kajian.sql` setelah pencadangan.
 
+## Aktifkan transfer otomatis voucher CAB
+
+1. Pada instalasi dengan produk voucher yang sudah aktif, jalankan `migrations/stifin-voucher-transfers.sql` di database aplikasi. Untuk pemasangan produk voucher baru, `php scripts/setup-stifin-voucher.php` memasang kedua migrasi voucher. Pastikan akun promotor sudah ditautkan dan kode cabang sudah benar.
+2. Setel `STIFIN_BRANCH_CODE=JML-CAB-62` untuk cabang JML, isi `STIFIN_API_USER_ID` dengan UserID resmi pengirim, lalu setel `STIFIN_VOUCHER_TRANSFER=1`. Simpan kredensial API di environment server jika STIFIn mensyaratkannya. Di Compose, buat ulang container app agar konfigurasi terbaca.
+3. Antrean dibuat ketika pembayaran lunas. Cron Docker memeriksanya setiap siklus, sekitar lima menit, dan admin dapat memeriksanya langsung melalui **Stok Voucher Tes → Proses transfer tertunda**. Pakai invoice baru untuk uji transfer. Invoice lama tidak dimasukkan ulang oleh migrasi.
+4. Untuk status **Perlu dicek**, cocokkan mutasi STIFIn dengan nomor invoice sebelum melakukan transfer manual. Aplikasi hanya mencoba ulang otomatis jika saldo awal gagal dibaca sebelum permintaan transfer dikirim.
+
 ## Pemasangan tanpa Docker
 
 Untuk Apache di cPanel, gunakan PHP 8.2 dengan PDO MySQL, cURL dan Sodium. Periksa ekstensi tambahan yang ditampilkan installer, aktifkan dukungan `.htaccess`, gunakan HTTPS, dan pakai database kosong yang dibuat melalui cPanel. Sediakan `DARMUTIARA_ISSUER_PUBLIC_KEY` untuk proses PHP atau definisikan konstanta dengan nama yang sama di `config.php` setelah installer selesai. Mode ini perlu diuji sesuai konfigurasi hosting.

@@ -115,6 +115,7 @@ $__averionCoreFiles = [
     __DIR__ . '/helpers/pricing.php',             // Fase 4: dime sale + unique code + upsell + setup fee
     __DIR__ . '/helpers/points.php',              // Poin Reward: ledger poin + earn/redeem/reverse
     __DIR__ . '/helpers/stifin-vouchers.php',
+    __DIR__ . '/helpers/stifin-voucher-transfers.php',
     __DIR__ . '/helpers/order-core.php',          // Fase 5: JANTUNG — order lifecycle + akses (17 fungsi)
     __DIR__ . '/helpers/magic-login.php',          // Magic-link akses instan pasca-bayar (akun lama, Segmen B)
     __DIR__ . '/helpers/landing-builder.php',     // Landing Builder: mode 'builder' Canvas (block engine no-code)
