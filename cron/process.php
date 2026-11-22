@@ -114,7 +114,7 @@ try {
     error_log('cron vendor_fulfillment: ' . $e->getMessage());
 }
 
-if (stifinVoucherTransferEnabled()) {
+if (stifinVoucherTransferEnabled() && getenv('STIFIN_CONTAINER_VOUCHER_WORKER') !== '1') {
     try {
         stifinProcessVoucherTransfers(getDB());
     } catch (Throwable $e) {

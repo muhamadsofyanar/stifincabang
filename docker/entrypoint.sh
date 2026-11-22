@@ -14,6 +14,18 @@ if [ "${1:-}" = apache2-foreground ]; then
         fi
     fi
     export DARMUTIARA_CONTAINER_CRON=1
+    export STIFIN_CONTAINER_VOUCHER_WORKER=1
+    run_stifin_worker() {
+        while :; do
+            if [ -s /data/config.php ] && [ -f /data/install.lock ]; then
+                runuser -u www-data -- /usr/local/bin/php /var/www/html/scripts/process-stifin-background.php "$1" ||
+                    printf '%s\n' "[STIFIn] Worker $1 gagal." >&2
+            fi
+            sleep "$2"
+        done
+    }
+    run_stifin_worker voucher 30 &
+    run_stifin_worker results 15 &
     (
         while :; do
             if [ -s /data/config.php ] && [ -f /data/install.lock ]; then

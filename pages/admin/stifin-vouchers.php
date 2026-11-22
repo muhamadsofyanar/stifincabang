@@ -48,6 +48,11 @@ include __DIR__ . '/../../partials/head.php';
         <?php if (!$ready): ?>
           <p role="alert">Pastikan konfigurasi produk voucher dan migrasi database sudah dipasang.</p>
         <?php else: ?>
+          <?php if (stifinVoucherTransferEnabled()): ?>
+            <p>Transfer otomatis aktif. Invoice yang sudah lunas diproses dari antrean di latar belakang.</p>
+          <?php else: ?>
+            <p>Transfer saldo STIFIn belum aktif. Pesanan voucher memakai alokasi stok lokal.</p>
+          <?php endif; ?>
           <p>Produk checkout <strong><?= e((string) $product) ?></strong> · ID <?= $productId ?></p>
           <dl class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div class="bg-white dark:bg-gray-900 border rounded-lg p-4"><dt>Tersedia</dt><dd class="text-xl font-bold"><?= (int) $stock ?></dd></div>

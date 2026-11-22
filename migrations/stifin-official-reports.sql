@@ -12,3 +12,19 @@ CREATE TABLE IF NOT EXISTS stifin_official_report_rows (
 
 ALTER TABLE stifin_official_report_rows
     ADD COLUMN IF NOT EXISTS period_only TINYINT UNSIGNED NOT NULL DEFAULT 0;
+
+ALTER TABLE stifin_official_report_rows
+    ADD COLUMN IF NOT EXISTS client_name VARCHAR(160) NULL,
+    ADD COLUMN IF NOT EXISTS client_phone VARCHAR(40) NULL,
+    ADD COLUMN IF NOT EXISTS client_email VARCHAR(254) NULL;
+
+CREATE TABLE IF NOT EXISTS stifin_official_history (
+    branch_code VARCHAR(40) NOT NULL PRIMARY KEY,
+    next_month DATE NOT NULL,
+    end_month DATE NOT NULL,
+    status ENUM('pending', 'failed', 'complete') NOT NULL DEFAULT 'pending',
+    attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    months_done INT UNSIGNED NOT NULL DEFAULT 0,
+    results_seen INT UNSIGNED NOT NULL DEFAULT 0,
+    retry_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends libcurl4-openss
     && rm -rf /var/lib/apt/lists/*
 COPY . /var/www/html/
 RUN php -l /var/www/html/index.php \
+    && php -l /var/www/html/scripts/process-stifin-background.php \
     && php -l /var/www/html/pages/admin/stifin-office.php \
     && php -l /var/www/html/pages/admin/stifin-participants.php \
     && php -l /var/www/html/pages/admin/stifin-official-reports.php \
@@ -15,6 +16,9 @@ RUN php -l /var/www/html/index.php \
     && php -l /var/www/html/pages/admin/stifin-promoters.php \
     && php -l /var/www/html/helpers/stifin-voucher-transfers.php \
     && php -l /var/www/html/helpers/stifin-promoters.php \
+    && php -l /var/www/html/pages/user/stifin-vouchers.php \
+    && php -l /var/www/html/pages/admin/stifin-vouchers.php \
+    && php -l /var/www/html/cron/process.php \
     && php -l /var/www/html/pages/user/stifin-office.php \
     && php -l /var/www/html/scripts/setup-stifin-office.php
 COPY docker/entrypoint.sh /usr/local/bin/stifin-entrypoint
