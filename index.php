@@ -98,6 +98,7 @@ $routes = [
     '#^/transactions/([A-Za-z0-9_-]+)$#'          => ['pages/user/transaction-detail.php', ['order_number' => 1]],
     '#^/member$#'                                  => ['pages/user/member-area.php',        []],
     '#^/member/voucher-tes$#'                       => ['pages/user/stifin-vouchers.php',     []],
+    '#^/admin/promotor-cabang$#'                   => ['pages/admin/stifin-promoters.php',   []],
     '#^/admin/voucher-tes$#'                        => ['pages/admin/stifin-vouchers.php',    []],
     '#^/member/my-licenses$#'                      => ['pages/user/my-licenses.php',        []],
     '#^/agency-seo$#'                              => ['pages/user/agency-seo.php',         []], // Portal Agency SEO (vendor-only)

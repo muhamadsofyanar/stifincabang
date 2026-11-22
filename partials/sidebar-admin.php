@@ -193,6 +193,10 @@ $userEmail = $_SESSION['email'] ?? '';
       Canvas
     </a>
 
+    <a href="<?= e(APP_URL) ?>/admin/promotor-cabang" class="<?= $navClass('/admin/promotor-cabang') ?>">
+      <span>Promotor Cabang</span>
+    </a>
+
     <!-- Transactions -->
     <?php if (stifinVoucherProductId() > 0): ?>
     <a href="<?= e(APP_URL) ?>/admin/voucher-tes" class="<?= $navClass('/admin/voucher-tes') ?>">
