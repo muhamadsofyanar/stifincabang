@@ -576,12 +576,14 @@ $typeBadge = function(string $type): string {
 
       <section class="dmi-hero mb-6" aria-labelledby="admin-darmutiara-heading">
         <div>
-          <h2 id="admin-darmutiara-heading">Ruang Pengurus</h2>
+          <h2 id="admin-darmutiara-heading">Kantor Virtual Cabang</h2>
           <?php if (staffCan('content')): ?>
-          <p>Terbitkan jadwal kajian, lihat peserta, dan moderasi diskusi.</p>
+          <p>Kelola kegiatan, promotor, peserta tes, voucher dan transaksi cabang.</p>
           <?php endif; ?>
         </div>
-        <?php if (staffCan('content')): ?>
+        <?php if (isAdmin()): ?>
+        <a class="dmi-cta" href="<?= e(APP_URL) ?>/admin/kantor-cabang">Buka Kantor Cabang <span aria-hidden="true">→</span></a>
+        <?php elseif (staffCan('content')): ?>
         <a class="dmi-cta" href="<?= e(APP_URL) ?>/admin/kajian">Kelola Kajian <span aria-hidden="true">→</span></a>
         <?php endif; ?>
       </section>

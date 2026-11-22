@@ -8,6 +8,11 @@ chown -R www-data:www-data /data /var/www/html/assets/uploads /var/www/html/stor
 install -d -m 0700 -o www-data -g www-data /data/php-sessions
 printf '%s\n' 'session.save_path = "/data/php-sessions"' > /usr/local/etc/php/conf.d/darmutiara-sessions.ini
 if [ "${1:-}" = apache2-foreground ]; then
+    if [ -s /data/config.php ] && [ -f /data/install.lock ]; then
+        if ! runuser -u www-data -- /usr/local/bin/php /var/www/html/scripts/setup-stifin-office.php; then
+            printf '%s\n' '[STIFIn] Migrasi kantor belum berhasil; periksa database dan log.' >&2
+        fi
+    fi
     export DARMUTIARA_CONTAINER_CRON=1
     (
         while :; do
