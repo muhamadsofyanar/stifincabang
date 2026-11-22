@@ -106,6 +106,9 @@ function stifinPromoterDirectory(string $body, string $branchCode): array
             'name' => $name,
             'area' => stifinPromoterText($row['Area'] ?? $row['area'] ?? '', 120),
             'province' => stifinPromoterText($row['Propinsi'] ?? $row['province'] ?? '', 120),
+            'institution' => stifinPromoterText($row['Lembaga'] ?? '', 160),
+            'membership' => stifinPromoterText($row['Status'] ?? '', 80),
+            'validity' => stifinPromoterText($row['Masa'] ?? '', 80),
             'active' => $status === null ? null : in_array(
                 strtolower(stifinPromoterText($status, 16)), ['1', 'true', 'ya', 'yes', 'aktif'], true
             ),

@@ -10,6 +10,8 @@ RUN php -l /var/www/html/index.php \
     && php -l /var/www/html/pages/admin/stifin-office.php \
     && php -l /var/www/html/pages/admin/stifin-participants.php \
     && php -l /var/www/html/pages/admin/stifin-reports.php \
+    && php -l /var/www/html/pages/admin/stifin-promoters.php \
+    && php -l /var/www/html/helpers/stifin-promoters.php \
     && php -l /var/www/html/pages/user/stifin-office.php \
     && php -l /var/www/html/scripts/setup-stifin-office.php
 COPY docker/entrypoint.sh /usr/local/bin/stifin-entrypoint

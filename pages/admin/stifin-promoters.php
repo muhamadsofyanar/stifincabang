@@ -15,6 +15,17 @@ try {
 }
 $message = '';
 $actionError = '';
+if (($_GET['export'] ?? '') === 'csv' && $directoryError === '') {
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="promotor-cabang.csv"');
+    $out = fopen('php://output','w');
+    fputcsv($out,['Kode','Nama','Area','Provinsi','Lembaga','Status','Masa aktif']);
+    foreach ($promoters as $p) {
+        $fields = [$p['code'],$p['name'],$p['area'],$p['province'],$p['institution'],$p['membership'],$p['validity']];
+        fputcsv($out,array_map(static fn($v) => preg_match('/^[\s]*[=+\-@]/u',(string)$v) ? "'".$v : $v,$fields));
+    }
+    fclose($out); exit;
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $directoryError === '') {
     try {
         if (!validateCSRF($_POST['csrf_token'] ?? '')) {
@@ -68,7 +79,8 @@ include __DIR__ . '/../../partials/head.php';
         <?php elseif ($promoters === []): ?>
           <p>API STIFIn belum mengembalikan promotor untuk cabang ini.</p>
         <?php else: ?>
-          <p><?= count($promoters) ?> promotor dari direktori STIFIn</p>
+          <p><?= count($promoters) ?> promotor dari direktori STIFIn · Koneksi direktori berhasil</p>
+          <div class="flex flex-wrap gap-3"><a class="rounded border p-2" href="?export=csv">Unduh direktori CSV</a><button type="button" class="rounded border p-2" onclick="window.print()">Cetak / PDF</button></div>
           <form method="post" class="space-y-3">
           <input type="hidden" name="csrf_token" value="<?= e(generateCSRF()) ?>">
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -87,6 +99,8 @@ include __DIR__ . '/../../partials/head.php';
                   <th scope="col" class="p-3">Provinsi</th>
                   <th scope="col" class="p-3">Status di STIFIn</th>
                   <th scope="col" class="p-3">Email</th>
+                  <th scope="col" class="p-3">Lembaga</th>
+                  <th scope="col" class="p-3">Masa aktif</th>
                   <th scope="col" class="p-3">Voucher</th>
                   <th scope="col" class="p-3">Akun lokal</th>
                 </tr>
@@ -105,6 +119,8 @@ include __DIR__ . '/../../partials/head.php';
                     <td class="p-3"><?= e($promoter['province'] ?: '—') ?></td>
                     <td class="p-3"><?= $promoter['active'] === null ? '—' : ($promoter['active'] ? 'Aktif' : 'Nonaktif') ?></td>
                     <td class="p-3"><?= e($promoter['email'] ?: '—') ?></td>
+                    <td class="p-3"><?= e($promoter['institution'] ?: '—') ?></td>
+                    <td class="p-3"><?= e($promoter['validity'] ?: '—') ?></td>
                     <td class="p-3"><button class="rounded-lg border px-3 py-1.5 font-medium whitespace-nowrap" type="submit" name="balance" value="<?= e($promoter['code']) ?>">Cek saldo</button></td>
                     <td class="p-3">
                       <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
