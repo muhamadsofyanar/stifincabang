@@ -119,8 +119,8 @@ function stifinPromoterBalance(string $code): array
         throw new RuntimeException('Format saldo voucher STIFIn tidak dikenali.');
     }
 
-    $voucherKeys = ['voucher', 'saldoj', 'jumlah', 'jmlvoucher', 'totvoucher', 'totvou', 'totalvoucher', 'jmlvou'];
-    $freeKeys = ['free', 'saldof', 'jmlfree', 'totfree', 'totfre', 'totalfree'];
+    $voucherKeys = ['voucher', 'totalv', 'saldoj', 'jumlah', 'jmlvoucher', 'totvoucher', 'totvou', 'totalvoucher', 'jmlvou'];
+    $freeKeys = ['free', 'totalf', 'saldof', 'jmlfree', 'totfree', 'totfre', 'totalfree'];
     $balances = ['voucher' => null, 'free' => null];
     $queue = [$data];
     while ($queue) {
