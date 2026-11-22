@@ -16,12 +16,12 @@ function stifinBranchPromoters(string $branchCode): array
     );
 }
 
-function stifinPromoterApiGet(string $path): string
+function stifinPromoterApiGet(string $path, int $timeout = 15): string
 {
-    return stifinPromoterApiRequest($path);
+    return stifinPromoterApiRequest($path, null, $timeout);
 }
 
-function stifinPromoterApiRequest(string $path, ?array $payload = null): string
+function stifinPromoterApiRequest(string $path, ?array $payload = null, int $timeout = 15): string
 {
     $baseUrl = rtrim(trim((string) getenv('STIFIN_API_BASE')), '/') ?: 'https://apro.stifin.id/api';
     $urlParts = parse_url($baseUrl);
@@ -48,7 +48,7 @@ function stifinPromoterApiRequest(string $path, ?array $payload = null): string
         CURLOPT_PROTOCOLS => CURLPROTO_HTTPS,
         CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT => 15,
+        CURLOPT_TIMEOUT => $timeout,
         CURLOPT_WRITEFUNCTION => static function ($handle, string $chunk) use (&$body): int {
             if (strlen($body) + strlen($chunk) > 12_000_000) {
                 return 0;

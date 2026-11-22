@@ -72,10 +72,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($from > $until || $until > date('Y-m')) {
                     throw new InvalidArgumentException('Periksa urutan periode. Bulan akhir tidak boleh di masa depan.');
                 }
-                $schedule = getDB()->prepare("INSERT INTO stifin_official_history (branch_code, next_month, end_month)
-                    VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE
+                $schedule = getDB()->prepare("INSERT INTO stifin_official_history (branch_code, next_month, end_month, try_range)
+                    VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE
                     next_month = IF(status = 'pending', next_month, VALUES(next_month)),
                     end_month = IF(status = 'pending', end_month, VALUES(end_month)),
+                    try_range = IF(status = 'pending', try_range, 1),
                     attempts = IF(status = 'pending', attempts, 0),
                     months_done = IF(status = 'pending', months_done, 0),
                     results_seen = IF(status = 'pending', results_seen, 0),
@@ -148,12 +149,12 @@ if ($branch !== '') {
             $params[] = $start->modify('+1 month')->format('Y-m-d');
         }
         if ($search !== '') {
-            $where .= ' AND (client_name LIKE ? OR source_ref LIKE ? OR client_phone LIKE ? OR client_email LIKE ? OR promoter_code LIKE ?)';
+            $where .= ' AND (client_name LIKE ? OR COALESCE(official_ref, source_ref) LIKE ? OR client_phone LIKE ? OR client_email LIKE ? OR promoter_code LIKE ?)';
             array_push($params, ...array_fill(0, 5, '%' . $search . '%'));
         }
         $offset = ($page - 1) * 100;
-        $query = getDB()->prepare('SELECT source_ref, report_date, promoter_code, report_value, imported_at,
-            period_only, client_name, client_phone, client_email FROM stifin_official_report_rows WHERE ' . $where .
+        $query = getDB()->prepare('SELECT COALESCE(official_ref, source_ref) AS display_ref, report_date, promoter_code, report_value, imported_at,
+            period_only, sent_date, client_name, client_phone, client_email FROM stifin_official_report_rows WHERE ' . $where .
             ' ORDER BY report_date DESC, source_ref LIMIT 101 OFFSET ' . $offset);
         $query->execute($params);
         $rows = $query->fetchAll(PDO::FETCH_ASSOC);
@@ -224,7 +225,7 @@ include __DIR__ . '/../../partials/head.php';
             <?php if ($type === 'hasil' && $history !== null): ?>
                 <section class="rounded-xl border p-5 bg-white dark:bg-gray-900 space-y-3">
                     <h2 class="font-bold">Tarik riwayat hasil tes</h2>
-                    <p>Sinkronisasi berjalan per bulan meskipun halaman ditutup.</p>
+                    <p>Mulia mencoba mengambil satu rentang sekaligus. Jika perlu, proses dilanjutkan per bulan di latar belakang.</p>
                     <?php if ($history): ?>
                         <p role="status">
                             <?= (int) $history['months_done'] ?> bulan selesai · <?= (int) $history['results_seen'] ?> hasil diterima
@@ -243,7 +244,7 @@ include __DIR__ . '/../../partials/head.php';
                     <?php else: ?>
                         <form method="post" action="<?= e($listUrl) ?>" class="flex flex-wrap items-end gap-3">
                             <input type="hidden" name="csrf_token" value="<?= e($csrf) ?>">
-                            <label>Bulan awal <input class="block rounded border p-2" type="month" name="mulai" min="2000-01" value="2000-11" required></label>
+                            <label>Bulan awal <input class="block rounded border p-2" type="month" name="mulai" min="2000-01" value="2020-10" required></label>
                             <label>Bulan akhir <input class="block rounded border p-2" type="month" name="sampai" max="<?= e(date('Y-m')) ?>" value="<?= e(date('Y-m')) ?>" required></label>
                             <button class="rounded-lg border px-3 py-2" name="operation" value="start-history">Mulai sinkron riwayat</button>
                         </form>
@@ -284,14 +285,15 @@ include __DIR__ . '/../../partials/head.php';
                     <?php endif; ?>
                 <?php else: ?>
                     <table class="w-full text-left">
-                        <thead><tr><th>Referensi</th><th>Tanggal / periode</th><th>Promotor</th><?php if ($type === 'hasil'): ?><th>Klien</th><th>Kontak</th><?php endif; ?><th><?= e(ucfirst(str_replace('_', ' ', $column))) ?></th><th>Diimpor</th></tr></thead>
+                        <thead><tr><th>Referensi</th><th>Tanggal / periode</th><th>Promotor</th><?php if ($type === 'hasil'): ?><th>Tanggal kirim</th><th>Klien</th><th>Kontak</th><?php endif; ?><th><?= e(ucfirst(str_replace('_', ' ', $column))) ?></th><th>Diimpor</th></tr></thead>
                         <tbody>
                         <?php foreach (array_slice($rows, 0, 100) as $row): ?>
                             <tr class="border-t">
-                                <td><?= e($row['source_ref']) ?></td>
+                                <td><?= e($row['display_ref']) ?></td>
                                 <td><?= e((int) $row['period_only'] ? substr($row['report_date'], 0, 7) : $row['report_date']) ?></td>
                                 <td><?= e($row['promoter_code']) ?></td>
                                 <?php if ($type === 'hasil'): ?>
+                                    <td><?= e($row['sent_date'] ?? '—') ?></td>
                                     <td><?= e($row['client_name'] ?: '—') ?></td>
                                     <td><span class="block"><?= e($row['client_phone'] ?: '—') ?></span>
                                         <?php if ($row['client_email']): ?><a class="underline" href="mailto:<?= e($row['client_email']) ?>"><?= e($row['client_email']) ?></a><?php endif; ?>

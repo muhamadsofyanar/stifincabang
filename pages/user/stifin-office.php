@@ -39,7 +39,7 @@ if ($profile !== null && $profile['active'] === true) {
     try {
         $monthStart = new DateTimeImmutable($reportMonth . '-01');
         $reportQuery = getDB()->prepare(
-            "SELECT source_ref, report_date, report_value, period_only, COUNT(*) OVER () AS total_rows
+            "SELECT COALESCE(official_ref, source_ref) AS display_ref, report_date, report_value, period_only, COUNT(*) OVER () AS total_rows
              FROM stifin_official_report_rows
              WHERE branch_code = ? AND promoter_code = ? AND report_type = 'hasil'
                AND report_date >= ? AND report_date < ?
@@ -84,7 +84,7 @@ include __DIR__ . '/../../partials/head.php';
                     <tbody>
                     <?php foreach ($reportRows as $result): ?>
                         <tr class="border-t">
-                            <td><?= e($result['source_ref']) ?></td>
+                            <td><?= e($result['display_ref']) ?></td>
                             <td><?= e((int) $result['period_only'] ? substr($result['report_date'], 0, 7) : $result['report_date']) ?></td>
                             <td><?= e($result['report_value']) ?></td>
                         </tr>
