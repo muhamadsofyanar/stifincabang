@@ -178,7 +178,11 @@ if ($showTickets) {
     <?php endif; ?>
 
     <?php require_once __DIR__ . '/../helpers/stifin-promoters.php';
-    if (stifinVoucherProductId() > 0 || stifinLinkedPromoterCode(getDB(), (int) ($_SESSION['user_id'] ?? 0)) !== null): ?>
+    $stifinSidebarPromoter = stifinLinkedPromoterCode(getDB(), (int) ($_SESSION['user_id'] ?? 0));
+    if ($stifinSidebarPromoter !== null): ?>
+    <a href="<?= e(APP_URL) ?>/member/stifin-saya" class="<?= $navClass('/member/stifin-saya') ?>"><span>STIFIn Saya</span></a>
+    <?php endif; ?>
+    <?php if (stifinVoucherProductId() > 0 || $stifinSidebarPromoter !== null): ?>
     <a href="<?= e(APP_URL) ?>/member/voucher-tes" class="<?= $navClass('/member/voucher-tes') ?>">
       <span>Voucher Tes</span>
     </a>

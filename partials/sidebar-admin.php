@@ -193,6 +193,16 @@ $userEmail = $_SESSION['email'] ?? '';
       Canvas
     </a>
 
+    <?php if (isAdmin()): ?>
+    <a href="<?= e(APP_URL) ?>/admin/kantor-cabang" class="<?= $navClass('/admin/kantor-cabang') ?>">
+      <span>Kantor Virtual Cabang</span>
+    </a>
+    <a href="<?= e(APP_URL) ?>/admin/peserta-tes" class="<?= $navClass('/admin/peserta-tes') ?>">
+      <span>Peserta &amp; Jadwal Tes</span>
+    </a>
+    <a href="<?= e(APP_URL) ?>/admin/laporan-cabang" class="<?= $navClass('/admin/laporan-cabang') ?>">
+      <span>Laporan Cabang</span>
+    </a>
     <a href="<?= e(APP_URL) ?>/admin/promotor-cabang" class="<?= $navClass('/admin/promotor-cabang') ?>">
       <span>Promotor Cabang</span>
     </a>
@@ -202,6 +212,7 @@ $userEmail = $_SESSION['email'] ?? '';
     <a href="<?= e(APP_URL) ?>/admin/voucher-tes" class="<?= $navClass('/admin/voucher-tes') ?>">
       <span>Stok Voucher Tes</span>
     </a>
+    <?php endif; ?>
     <?php endif; ?>
     <a href="<?= e(APP_URL) ?>/admin/transactions" class="<?= $navClass('/admin/transactions') ?>">
       <svg class="<?= $iconClass('/admin/transactions') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
