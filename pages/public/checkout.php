@@ -25,6 +25,25 @@ if (!$product) {
     redirect('/products');
 }
 
+$isVoucher = ($product['slug'] ?? '') === 'voucher-tes-stifin';
+$voucherQuantity = $isVoucher ? stifinVoucherQuantity($_GET['jumlah'] ?? '1') : 1;
+if ($isVoucher && $productId !== stifinVoucherProductId()) {
+    flash('error', 'Pembelian voucher belum tersedia.', 'error');
+    redirect('/products');
+}
+if ($isVoucher && !$voucherQuantity) {
+    flash('error', 'Masukkan jumlah voucher antara 1 dan 1.000.', 'error');
+    redirect('/checkout?product_id=' . $productId);
+}
+if ($isVoucher) {
+    $product['setup_fee'] = 0;
+    $product['dime_enabled'] = 0;
+    $product['booking_enabled'] = 0;
+    $product['pricing_type'] = 'fixed';
+    $product['original_price'] = 0;
+    $product['show_coupon'] = 0;
+}
+
 // GUARD: produk tanpa harga (price<=0, non-flexible) tak boleh di-checkout — cegah akses
 // gratis produk berbayar (placeholder migrasi / salah konfig). Selaras guard process.php.
 if (orderProductNotSellableFree($product)) {
@@ -40,7 +59,7 @@ if (orderProductNotSellableFree($product)) {
 // setelah akses telanjur mati. Produk sekali-bayar tetap ditolak (beli 2x sia-sia).
 $isRenewal       = false;
 $renewCurrentExp = null;
-if (hasAccess((int) $_SESSION['user_id'], $productId)) {
+if (!$isVoucher && hasAccess((int) $_SESSION['user_id'], $productId)) {
     if ($product['access_duration_days'] !== null) {
         $isRenewal = true;
         try {
@@ -150,7 +169,7 @@ $manualTransferAvailable = $manualTransferEnabled && (count($bankAccounts) > 0 |
 $pageTitle   = 'Checkout — ' . $product['name'];
 $topbarTitle = 'Checkout';
 
-$price     = (float) $product['price'];
+$price     = (float) $product['price'] * $voucherQuantity;
 $origPrice = (float) $product['original_price'];
 $discount  = ($origPrice > $price) ? ($origPrice - $price) : 0.0;
 // Biaya awal (setup fee) — hanya pembelian pertama (user sudah lolos hasAccess di atas).
@@ -376,6 +395,19 @@ generateCSRF();
       </div>
       <?php endif; ?>
 
+      <?php if ($isVoucher): ?>
+        <form method="get" action="<?= e(APP_URL) ?>/checkout" class="mb-4 rounded-xl border bg-white dark:bg-gray-900 p-4">
+          <input type="hidden" name="product_id" value="<?= $productId ?>">
+          <label for="voucher-quantity" class="font-semibold">Jumlah voucher</label>
+          <div class="mt-2 flex flex-wrap items-center gap-3">
+            <input id="voucher-quantity" class="rounded-lg border px-3 py-2" type="number" name="jumlah"
+                   min="1" max="1000" step="1" value="<?= $voucherQuantity ?>" required>
+            <button type="submit" class="rounded-lg border px-3 py-2 font-semibold">Perbarui jumlah</button>
+          </div>
+          <p class="mt-2 text-sm"><?= $voucherQuantity ?> voucher × <?= e(formatRupiah((float) $product['price'])) ?></p>
+        </form>
+        <input type="hidden" name="voucher_quantity" form="checkout-form" value="<?= $voucherQuantity ?>">
+      <?php endif; ?>
       <?php include $_tplFile; ?>
 
       <div class="max-w-5xl mx-auto">
@@ -387,7 +419,7 @@ generateCSRF();
 </div>
 <script>
 (function () {
-    var basePrice    = <?= (float) $product['price'] ?>;
+    var basePrice    = <?= $isVoucher ? $price : (float) $product['price'] ?>;
     var appliedCode  = '';
     var couponDisc   = 0;  // live coupon discount amount
 
@@ -644,7 +676,7 @@ generateCSRF();
 
 // ── Bump Offers JS ────────────────────────────────────────────
 (function () {
-    var basePrice    = <?= (float) $product['price'] ?>;
+    var basePrice    = <?= $isVoucher ? $price : (float) $product['price'] ?>;
     var setupFee     = <?= (float) $setupFee ?>;  // biaya awal (pembelian pertama), tak didiskon kupon
     var totalEl      = document.getElementById('order-total-display');
     var bumpRow      = document.getElementById('bump-summary-row');
@@ -696,7 +728,7 @@ generateCSRF();
 
 <?php
 require_once __DIR__ . '/../../tracking/PixelHelper.php';
-$ckPrice = (float) ($product['price'] ?? 0);
+$ckPrice = $isVoucher ? $price : (float) ($product['price'] ?? 0);
 if (PixelHelper::metaFullFunnelEnabled() && !isAdminOrStaff()) {
     // Corong penuh: event browser + CAPI ber-eventID stabil → Meta men-dedup.
     // (sinkron dgn checkout_click di atas; admin dikecualikan sama seperti funnel)

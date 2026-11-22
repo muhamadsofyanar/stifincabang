@@ -65,7 +65,7 @@ $isPreview = isset($_GET['preview']) && $_GET['preview'] === '1'
 $allowGuestSupport = ($product['pricing_type'] ?? '') === 'flexible' && (int) ($product['show_on_support'] ?? 0) === 1;
 
 // Produk bukan mode publik (dan bukan produk Dukung) → selalu checkout login biasa.
-if (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport) {
+if (($product['slug'] ?? '') === 'voucher-tes-stifin' || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
     if ($EMBED) { http_response_code(404); echo 'Form embed tidak aktif untuk produk ini.'; exit; }
     redirect('/checkout?product_id=' . (int) $product['id']);
 }

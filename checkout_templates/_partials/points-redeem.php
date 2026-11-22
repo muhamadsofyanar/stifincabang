@@ -1,4 +1,5 @@
 <?php
+if (!empty($isVoucher)) return;
 // ─── Tukar Poin Reward jadi potongan (checkout LOGIN saja) ───────────────
 // Variabel yang dipakai: $product, $isFree, $isFlexible.
 // Angka di sini hanya PRATINJAU — server menghitung ulang dari saldo terkunci

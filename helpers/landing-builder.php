@@ -604,7 +604,7 @@ function avLbRenderPage(array $page): string
     $blocks = $env['blocks'];
 
     $examLanding = ($page['page_type'] ?? '') === 'product_landing'
-        && in_array($page['slug'] ?? '', ['ujian-wsl-1', 'ujian-wsl-2', 'ujian-wst-health', 'ujian-wst-learning', 'ujian-wst-tahfizh'], true);
+        && in_array($page['slug'] ?? '', ['ujian-wsl-1', 'ujian-wsl-2', 'ujian-wst-health', 'ujian-wst-learning', 'ujian-wst-tahfizh', 'beli-voucher-stifin'], true);
     if ($examLanding) {
         $sampleFeatures = avLbRegistry()['pricing']['defaults']['features'];
         foreach ($blocks as &$block) {

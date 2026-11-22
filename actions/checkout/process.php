@@ -83,12 +83,24 @@ try {
         redirect('/products');
     }
 
+    $isVoucher = ($product['slug'] ?? '') === 'voucher-tes-stifin';
+    $quantity = $isVoucher ? stifinVoucherQuantity($_POST['voucher_quantity'] ?? null) : 1;
+    if ($isVoucher && ($productId !== stifinVoucherProductId() || !$quantity || !empty($_SESSION['impersonating']))) {
+        $message = 'Pembelian voucher tidak tersedia atau jumlah di luar rentang 1–1.000.';
+        if ($isGatewayFlow) {
+            echo json_encode(['error' => $message]);
+            exit;
+        }
+        flash('error', $message, 'error');
+        redirect('/checkout?product_id=' . $productId);
+    }
+
     // Cek akses ganda — HANYA blokir produk SEKALI-BAYAR. Produk BERLANGGANAN
     // (access_duration_days !== null) boleh order lagi meski masa aktif belum habis =
     // PERPANJANGAN (activateAccess menumpuk masa aktif dari tanggal habis, bukan reset).
     // Konsisten dgn halaman checkout.php yang sudah menampilkan UI perpanjangan — dulu
     // guard ini menolaknya sehingga tombol "Perpanjang" berujung "sudah memiliki akses".
-    if ($product['access_duration_days'] === null && hasAccess($userId, $productId)) {
+    if (!$isVoucher && $product['access_duration_days'] === null && hasAccess($userId, $productId)) {
         if ($isGatewayFlow) {
             echo json_encode(['error' => 'Kamu sudah memiliki akses ke produk ini.']);
             exit;
@@ -107,7 +119,7 @@ try {
     $price    = (float) $product['price'];
 
     // ─── Bayar Fleksibel: nominal ditentukan pembeli — VALIDASI SERVER-SIDE WAJIB ──
-    $isFlexible = ($product['pricing_type'] ?? 'fixed') === 'flexible';
+    $isFlexible = !$isVoucher && ($product['pricing_type'] ?? 'fixed') === 'flexible';
     if ($isFlexible) {
         $flexFloor = max((float) ($product['flexible_min'] ?? 0), 1); // Fase 1: nominal > 0
         $flexAmt   = (float) preg_replace('/[^0-9]/', '', (string) ($_POST['flexible_amount'] ?? '0')); // digit saja (rupiah bulat)
@@ -124,17 +136,17 @@ try {
 
     // ─── Dime Sale: pakai harga TERKUNCI saat checkout dibuka (pembeli bayar yang dilihat).
     // Fallback hitung ulang bila kunci hilang/kedaluwarsa. Dime eksklusif dgn flexible.
-    if (!$isFlexible && !empty($product['dime_enabled'])) {
+    if (!$isVoucher && !$isFlexible && !empty($product['dime_enabled'])) {
         $locked = dimeLockedPrice($productId);
         $price  = $locked !== null ? $locked : dimeEffectivePrice($product);
     }
 
-    $subtotal = $price;
+    $subtotal = $price * $quantity;
     $discount = 0.0;
     // Biaya awal (setup fee) — hanya dibebankan pada pembelian PERTAMA produk ini
     // (0 untuk perpanjangan; user sampai di sini berarti hasAccess sudah false).
     // Produk fleksibel: setup fee tidak berlaku.
-    $setupFee = $isFlexible ? 0.0 : productSetupFee($product, $userId);
+    $setupFee = ($isVoucher || $isFlexible) ? 0.0 : productSetupFee($product, $userId);
     $isFree   = ($price + $setupFee) <= 0;
 
     // ─── GUARD KEAMANAN: produk tanpa harga TIDAK boleh di-checkout gratis ─────
@@ -153,7 +165,7 @@ try {
     // order settlement (dibuat otomatis saat DP paid). Tanpa kupon & tanpa bump.
     $isBooking  = false;
     $bookingFee = 0.0;
-    if (($_POST['payment_mode'] ?? 'full') === 'booking') {
+    if (!$isVoucher && ($_POST['payment_mode'] ?? 'full') === 'booking') {
         $bookingFee = (float) ($product['booking_fee'] ?? 0);
         if ((int) ($product['booking_enabled'] ?? 0) === 1
             && $bookingFee > 0 && $bookingFee < ($price + $setupFee)) {
@@ -182,7 +194,7 @@ try {
     $couponCode = null;
     $couponDiscount = 0.0;
 
-    if (!$isFree && !$isBooking && !$isFlexible) {
+    if (!$isVoucher && !$isFree && !$isBooking && !$isFlexible) {
         $rawCouponId  = (int) ($_POST['coupon_id'] ?? 0);
         if ($rawCouponId > 0) {
             $cStmt = $pdo->prepare(
@@ -241,7 +253,7 @@ try {
     // tertutup — lihat guard checkout Rp0 di atas).
     $pointsUsed     = 0;
     $pointsDiscount = 0.0;
-    if (($_POST['use_points'] ?? '') === '1'
+    if (!$isVoucher && ($_POST['use_points'] ?? '') === '1'
         && function_exists('pointsEnabled') && pointsEnabled()
         && !$isFree && !$isBooking && !$isFlexible) {
         try {
@@ -350,12 +362,12 @@ try {
     // INSERT order item — snapshot nama produk saat transaksi
     $stmt = $pdo->prepare(
         'INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
-         VALUES (?, ?, ?, ?, 1)'
+         VALUES (?, ?, ?, ?, ?)'
     );
     $stmt->execute([
         $orderId, $productId,
         $product['name'] . ($isBooking ? ' — Booking Fee' : ''),
-        $isBooking ? $bookingFee : $price,
+        $isBooking ? $bookingFee : $price, $quantity,
     ]);
 
     // ─── Process Order Bumps (server-side re-validation) ─────
@@ -365,7 +377,7 @@ try {
     $bumpRes             = orderProcessBumps(
         $pdo, $orderId, $productId, $userId,
         (array) ($_POST['bump_ids'] ?? []),
-        ($isBooking || $isFlexible || $isFree)
+        ($isVoucher || $isBooking || $isFlexible || $isFree)
     );
     $validBumpProductIds = $bumpRes['ids'];
     $bumpTotal           = $bumpRes['total'];
@@ -378,7 +390,7 @@ try {
         $pdo, $orderId, $productId, $userId,
         (array) ($_POST['flash_bonus_ids'] ?? []),
         $validBumpProductIds,
-        ($isBooking || $isFlexible)
+        ($isVoucher || $isBooking || $isFlexible)
     );
 
     $finalTotal = $total + $bumpTotal;

@@ -1,4 +1,5 @@
 <?php
+if (!empty($isVoucher)) return;
 // Variables: $bumpOffers (array)
 if (empty($bumpOffers)) return;
 ?>

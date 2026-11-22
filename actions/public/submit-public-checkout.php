@@ -104,7 +104,7 @@ try {
     $stmt->execute([$productId]);
     $product = $stmt->fetch();
     $allowGuestSupport = $product && ($product['pricing_type'] ?? '') === 'flexible' && (int) ($product['show_on_support'] ?? 0) === 1;
-    if (!$product || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
+    if (!$product || ($product['slug'] ?? '') === 'voucher-tes-stifin' || (($product['checkout_mode'] ?? 'login') !== 'public' && !$allowGuestSupport)) {
         flash('public_checkout_error', 'Produk tidak ditemukan atau tidak tersedia.', 'error');
         redirect('/products');
     }

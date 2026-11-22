@@ -207,3 +207,45 @@ function stifinPromoterImport(PDO $pdo, string $branch, array $promoters, array 
     }
     return $result;
 }
+
+function stifinLinkedPromoterCode(PDO $pdo, int $userId): ?string
+{
+    $branch = stifinPromoterBranchCode();
+    if ($userId <= 0 || $branch === '') {
+        return null;
+    }
+    try {
+        $stmt = $pdo->prepare("SELECT a.promoter_code FROM stifin_promoter_accounts a
+            JOIN users u ON u.id = a.user_id AND u.status = 'active' AND u.role = 'user'
+            WHERE a.user_id = ? AND a.branch_code = ?");
+        $stmt->execute([$userId, $branch]);
+        $code = $stmt->fetchColumn();
+        return $code === false ? null : (string) $code;
+    } catch (PDOException $error) {
+        error_log('STIFIn promoter mapping unavailable: ' . $error->getCode());
+        return null;
+    }
+}
+
+function stifinLinkExistingPromoter(PDO $pdo, string $branch, array $promoters, string $code): bool
+{
+    $row = array_column($promoters, null, 'code')[$code] ?? null;
+    $email = $row['email'] ?? '';
+    $emailCounts = array_count_values(array_column($promoters, 'email'));
+    if (($row['active'] ?? null) !== true || !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || ($emailCounts[$email] ?? 0) !== 1) {
+        return false;
+    }
+
+    $stmt = $pdo->prepare("INSERT INTO stifin_promoter_accounts (branch_code, promoter_code, user_id)
+        SELECT ?, ?, id FROM users WHERE email = ? AND role = 'user' AND status = 'active'");
+    try {
+        $stmt->execute([$branch, $code, $email]);
+        return $stmt->rowCount() === 1;
+    } catch (PDOException $error) {
+        if ((int) ($error->errorInfo[1] ?? 0) === 1062) {
+            return false;
+        }
+        throw $error;
+    }
+}

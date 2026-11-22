@@ -2,7 +2,16 @@
 
 function stifinVoucherProductId(): int
 {
-    return max(0, (int) getenv('STIFIN_VOUCHER_PRODUCT_ID'));
+    $configured = (int) getenv('STIFIN_VOUCHER_PRODUCT_ID');
+    return $configured > 0 ? $configured : max(0, (int) getSetting('stifin_voucher_product_id', '0'));
+}
+
+function stifinVoucherQuantity(mixed $value): int
+{
+    if (!is_string($value) && !is_int($value)) {
+        return 0;
+    }
+    return (int) filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
 }
 
 function stifinQueuePaidVouchers(PDO $db, int $orderId, int $userId): void

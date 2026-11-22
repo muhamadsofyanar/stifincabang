@@ -27,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $directoryError === '') {
             }
             $balance = stifinPromoterBalance($code);
             $message = $code . ' · Voucher ' . $balance['voucher'] . ' · Free ' . ($balance['free'] ?? '—');
+        } elseif (isset($_POST['link']) && is_string($_POST['link'])) {
+            $linked = stifinLinkExistingPromoter(getDB(), $branchCode, $promoters, $_POST['link']);
+            $message = $linked
+                ? 'Akun lokal berhasil ditautkan. Saldo STIFIn tersedia di menu Voucher Tes.'
+                : 'Akun tidak dapat ditautkan. Periksa apakah email unik, akun anggota aktif, dan kode belum terhubung.';
         } elseif (isset($_POST['import'])) {
             $codes = is_array($_POST['codes'] ?? null) ? $_POST['codes'] : [];
             if (!$codes) {
@@ -83,6 +88,7 @@ include __DIR__ . '/../../partials/head.php';
                   <th scope="col" class="p-3">Status di STIFIn</th>
                   <th scope="col" class="p-3">Email</th>
                   <th scope="col" class="p-3">Voucher</th>
+                  <th scope="col" class="p-3">Akun lokal</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,6 +106,13 @@ include __DIR__ . '/../../partials/head.php';
                     <td class="p-3"><?= $promoter['active'] === null ? '—' : ($promoter['active'] ? 'Aktif' : 'Nonaktif') ?></td>
                     <td class="p-3"><?= e($promoter['email'] ?: '—') ?></td>
                     <td class="p-3"><button class="rounded-lg border px-3 py-1.5 font-medium whitespace-nowrap" type="submit" name="balance" value="<?= e($promoter['code']) ?>">Cek saldo</button></td>
+                    <td class="p-3">
+                      <?php if ($promoter['active'] === true && filter_var($promoter['email'], FILTER_VALIDATE_EMAIL)): ?>
+                        <button class="rounded-lg border px-3 py-1.5 whitespace-nowrap" type="submit" name="link"
+                                value="<?= e($promoter['code']) ?>"
+                                onclick="return confirm('Tautkan promotor ini ke akun anggota aktif dengan email yang sama?')">Tautkan akun</button>
+                      <?php endif; ?>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
