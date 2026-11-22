@@ -114,4 +114,5 @@ $htmlThemeClass = $themeOnPage
 require_once __DIR__ . '/../tracking/PixelHelper.php';
 echo PixelHelper::renderClientScripts();
 ?>
+<?php if (!empty($muliaPageStyle)): ?><link rel="stylesheet" href="<?= e(APP_URL) ?>/assets/css/mulia-pages.css?v=1"><?php endif; ?>
 </head>

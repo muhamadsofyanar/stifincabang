@@ -192,8 +192,8 @@ $appLogo = getSetting('app_logo', '');
 // Warna solid brand (tanpa gradien) — dipakai tombol, badge, & placeholder.
 $brandGrad = 'background: var(--brand-color);';
 ?>
-<?php include __DIR__ . '/../../partials/head.php'; ?>
-<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 antialiased">
+<?php $muliaPageStyle = true; include __DIR__ . '/../../partials/head.php'; ?>
+<body class="mulia mulia-catalog min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 antialiased">
 <style>
   /* Tombol CTA — solid brand + shadow brand + hover-lift, konsisten dengan tombol login. */
   .hp-cta{box-shadow:0 6px 16px -6px color-mix(in srgb,var(--brand-color) 60%,transparent);transition:transform .15s ease,box-shadow .15s ease,opacity .15s ease;}

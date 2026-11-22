@@ -174,8 +174,9 @@ $waSvg = '<svg style="width:1.15rem;height:1.15rem" fill="currentColor" viewBox=
     .sp-mobilebar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;padding-bottom:calc(.7rem + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.97);backdrop-filter:blur(8px);border-top:1px solid #e5e7eb;box-shadow:0 -6px 22px -10px rgba(15,23,42,.2);}
     @media(min-width:1024px){ .sp-mobilebar{display:none;} }
   </style>
+<link rel="stylesheet" href="<?= e(APP_URL) ?>/assets/css/mulia-pages.css?v=1">
 </head>
-<body>
+<body class="mulia mulia-sales">
   <div class="sp-wrap">
 
     <!-- HERO -->

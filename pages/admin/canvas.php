@@ -332,6 +332,19 @@ generateCSRF();
                   <textarea name="html_embed" id="cHtmlEmbed" rows="12"
                             class="w-full px-3 py-2 rounded-lg text-xs font-mono border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-[var(--brand-color)] focus:border-transparent outline-none transition resize-y"
                             placeholder="<!DOCTYPE html>&#10;<html>...</html>"></textarea>
+                  <button type="button" id="muliaPreset" class="mt-2 text-sm font-semibold underline">Gunakan templat STIFIn Mulia</button>
+                  <template id="muliaSource"><textarea><!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pilihan STIFIn Mulia</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f6f4ed;color:#19382f;font:1rem/1.65 system-ui,sans-serif}main{max-width:64rem;margin:auto;padding:clamp(1.3rem,6vw,5rem)}header{padding-bottom:1rem;border-bottom:1px solid #a7b6aa;font-weight:700}h1,h2{font-family:Georgia,serif;font-weight:500;line-height:1.06}h1{font-size:clamp(2.8rem,7vw,5.5rem);max-width:16ch;margin:.8em 0 .35em}p{max-width:48ch}a{display:inline-block;padding:.75rem 1.25rem;background:#184b3b;color:white;border-radius:.5rem;text-decoration:none;font-weight:650}a:focus-visible{outline:3px solid #a96317;outline-offset:4px}section{margin-top:3rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr));gap:1rem}article{background:#fffdf8;border:1px solid #d5d9ce;padding:1.4rem;border-radius:.9rem}h2{font-size:1.65rem;margin:0}
+</style></head><body><main><header>STIFIn Mulia</header><h1>Kenali diri lebih dekat melalui STIFIn.</h1><p>Temukan tes personal atau keluarga, buku pendamping, dan workshop dalam katalog STIFIn Mulia.</p><a href="<?= e(APP_URL) ?>/products">Lihat katalog produk →</a><section aria-label="Pilihan produk"><article><h2>Tes STIFIn</h2><p>Lihat pilihan tes untuk diri sendiri atau keluarga.</p></article><article><h2>Buku</h2><p>Temukan bacaan untuk mempelajari hasil tes.</p></article><article><h2>Workshop</h2><p>Jelajahi kegiatan untuk mendalami konsep STIFIn.</p></article></section></main></body></html></textarea></template>
+                  <script>
+                    document.getElementById('muliaPreset').addEventListener('click', function () {
+                      const editor = document.getElementById('cHtmlEmbed');
+                      if (editor.value.trim() && !window.confirm('Ganti isi editor dengan templat STIFIn Mulia?')) return;
+                      editor.value = document.getElementById('muliaSource').content.querySelector('textarea').value;
+                      editor.dispatchEvent(new Event('input', {bubbles:true}));
+                      editor.focus();
+                    });
+                  </script>
                 </div>
 
                 <!-- Visual Builder block -->

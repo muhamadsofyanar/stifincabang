@@ -190,8 +190,9 @@ function renderAccessMaterial(array $m): string
     .am-file { display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1rem; border-radius: .6rem; font-size: .875rem; font-weight: 600; color: #fff; background: <?= e($brandColor) ?>; }
     .am-file svg { width: 1rem; height: 1rem; }
   </style>
+<link rel="stylesheet" href="<?= e(APP_URL) ?>/assets/css/mulia-pages.css?v=1">
 </head>
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="mulia mulia-access min-h-screen bg-gray-50 text-gray-900">
 <?php if (!$authed): ?>
   <!-- Gerbang password -->
   <div class="min-h-screen flex items-center justify-center p-4">

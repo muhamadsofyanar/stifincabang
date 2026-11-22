@@ -161,8 +161,8 @@ if ($isComingSoon) {
     $ctaHref = APP_URL . '/register?redirect=' . $authRedirect;   $ctaLabel = $isFree ? 'Daftar & Ambil' : 'Daftar & Beli';
 }
 ?>
-<?php include __DIR__ . '/../../partials/head.php'; ?>
-<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 antialiased">
+<?php $muliaPageStyle = true; include __DIR__ . '/../../partials/head.php'; ?>
+<body class="mulia mulia-detail min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 antialiased">
 
 <!-- ─── Navbar ────────────────────────────────────────────────── -->
 <nav class="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-40">

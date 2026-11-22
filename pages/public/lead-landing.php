@@ -160,8 +160,9 @@ $pixelIds = array_filter(array_map('trim', explode(',', (string) ($magnet['fb_pi
   <?php if ($submitted): ?>fbq('track','Lead');<?php endif; ?>
   </script>
   <?php endif; ?>
+<link rel="stylesheet" href="<?= e(APP_URL) ?>/assets/css/mulia-pages.css?v=1">
 </head>
-<body class="min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-white text-slate-800 antialiased">
+<body class="mulia mulia-lead min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-white text-slate-800 antialiased">
 
   <div class="min-h-screen flex items-start sm:items-center justify-center px-4 py-6">
     <div class="w-full max-w-sm">
