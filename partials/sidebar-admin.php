@@ -195,24 +195,30 @@ $userEmail = $_SESSION['email'] ?? '';
 
     <?php if (isAdmin()): ?>
     <a href="<?= e(APP_URL) ?>/admin/kantor-cabang" class="<?= $navClass('/admin/kantor-cabang') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/kantor-cabang') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V5l11-2v18M15 9h5v12M2 21h20M8 8h3M8 12h3M8 16h3"/></svg>
       <span>Kantor Virtual Cabang</span>
     </a>
     <a href="<?= e(APP_URL) ?>/admin/peserta-tes" class="<?= $navClass('/admin/peserta-tes') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/peserta-tes') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v14H3zM7 3v6m10-6v6M3 11h18m-13 5 2 2 5-5"/></svg>
       <span>Peserta &amp; Jadwal Tes</span>
     </a>
     <a href="<?= e(APP_URL) ?>/admin/data-resmi-cabang" class="<?= $navClass('/admin/data-resmi-cabang') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/data-resmi-cabang') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l5 5v13H5zM14 3v6h5M8 13h8m-8 4h6"/></svg>
         <span>Data Resmi App Cabang</span>
     </a>
     <a href="<?= e(APP_URL) ?>/admin/laporan-cabang" class="<?= $navClass('/admin/laporan-cabang') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/laporan-cabang') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 17v-5m5 5V6m5 11v-8"/></svg>
       <span>Laporan Cabang</span>
     </a>
     <a href="<?= e(APP_URL) ?>/admin/promotor-cabang" class="<?= $navClass('/admin/promotor-cabang') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/promotor-cabang') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a5 5 0 0 0-10 0v2M15 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0m2 4 2 2 3-4"/></svg>
       <span>Promotor Cabang</span>
     </a>
 
     <!-- Transactions -->
     <?php if (stifinVoucherProductId() > 0): ?>
     <a href="<?= e(APP_URL) ?>/admin/voucher-tes" class="<?= $navClass('/admin/voucher-tes') ?>">
+      <svg aria-hidden="true" class="<?= $iconClass('/admin/voucher-tes') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4zM15 8v2m0 4v2"/></svg>
       <span>Stok Voucher Tes</span>
     </a>
     <?php endif; ?>

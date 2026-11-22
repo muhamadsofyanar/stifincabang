@@ -1783,7 +1783,7 @@ INSERT INTO `settings` (`setting_key`,`setting_value`,`setting_group`) VALUES
 ('app_logo','','branding'),
 ('app_favicon','','branding'),
 ('brand_color','#043F2B','branding'),
-('brand_color_secondary','#527FA3','branding'),
+('brand_color_secondary','#496B59','branding'),
 ('dark_mode_default','0','appearance'),
 ('affiliate_commission_rate','35','affiliate'),
 ('affiliate_enabled','1','affiliate'),

@@ -121,3 +121,13 @@ html.darmutiara-dashboard .dmi-kajian-panel { background: var(--dmi-surface); bo
   .dmi-hero::before { right: -9rem; }
   .dmi-hero::after { right: -7rem; }
 }
+
+/* Kantor Virtual Cabang */
+.branch-office {background:#f5f4ec;color:#19382f}
+.branch-office header {background:#163e34;color:white}
+.branch-office header p {color:#d1e6da}
+.branch-office a.block {background:#fffefa;border-color:#cddbd2;color:#18392e}
+.branch-office a.block:hover {border-color:#56816d}
+.dark .branch-office {background:#101c19;color:#eef5ef}
+.dark .branch-office a.block {background:#1a2a25;border-color:#3b5046;color:#edf5ef}
+.branch-office a:focus-visible {outline:3px solid #759d84;outline-offset:2px}

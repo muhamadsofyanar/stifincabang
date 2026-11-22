@@ -67,7 +67,7 @@ include __DIR__ . '/../../partials/head.php';
     <?php include __DIR__ . '/../../partials/sidebar-admin.php'; ?>
     <div class="flex-1 flex flex-col overflow-hidden lg:ml-60">
         <?php include __DIR__ . '/../../partials/topbar.php'; ?>
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main class="branch-office flex-1 overflow-y-auto p-4 sm:p-6">
             <div class="mx-auto max-w-6xl space-y-6">
                 <header class="rounded-2xl bg-emerald-950 p-5 text-white sm:p-7">
                     <h1 class="text-2xl font-bold sm:text-3xl">Kantor Virtual Cabang</h1>

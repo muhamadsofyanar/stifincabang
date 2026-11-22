@@ -3,7 +3,7 @@
 // $pageTitle (string) — judul tab browser
 $pageTitle       = $pageTitle       ?? getSetting('app_name', 'STIFIn Mulia');
 $brandColor      = getSetting('brand_color', '#043F2B');
-$brandColorLight = getSetting('brand_color_secondary', '#527FA3');
+$brandColorLight = getSetting('brand_color_secondary', '#496B59');
 // Dark mode disimpan di cookie (di-set oleh JS) agar server bisa render
 // <html class="dark"> sejak byte pertama → cegah kedip putih saat pindah menu.
 // Fallback ke setting dark_mode_default bila cookie belum ada.
