@@ -71,7 +71,7 @@ try {
                 ['type' => 'hero', 'cfg' => $cta + ['badge' => 'STIFIn Mulia', 'headline' => 'Ujian ' . $name, 'subheadline' => $summary]],
                 ['type' => 'benefits', 'cfg' => ['heading' => 'Topik workshop', 'items' => implode("\n", $topics)]],
                 ['type' => 'text', 'cfg' => ['heading' => 'Sebelum membayar', 'body' => $info]],
-                ['type' => 'pricing', 'cfg' => $cta + ['title' => 'Biaya ujian', 'price' => $rupiah, 'price_note' => 'Per peserta']],
+                ['type' => 'pricing', 'cfg' => $cta + ['title' => 'Biaya ujian', 'price' => $rupiah, 'price_note' => 'Per peserta', 'features' => '']],
             ],
         ]);
         $createCanvas->execute([$landingSlug, 'Ujian ' . $name, $summary, $content, $productId]);

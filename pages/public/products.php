@@ -144,10 +144,11 @@ $featured = null;
 if ($showLanding && $showSpotlight && isset($pdo)) {
     try {
         $fst = $pdo->query(
-            "SELECT p.*,
+            "SELECT p.*, cp.slug AS canvas_slug,
                     (SELECT COUNT(*) FROM order_items oi JOIN orders o ON oi.order_id = o.id
                      WHERE oi.product_id = p.id AND o.status = 'paid') AS sold_count
-             FROM products p WHERE p.status = 'active' AND p.hide_from_catalog = 0
+             FROM products p LEFT JOIN canvas_pages cp ON cp.id = p.canvas_id AND cp.is_active = 1
+             WHERE p.status = 'active' AND p.hide_from_catalog = 0
              ORDER BY sold_count DESC, p.sort_order ASC, p.created_at DESC LIMIT 1"
         );
         $featured = $fst->fetch() ?: null;
@@ -161,7 +162,8 @@ $newRelease = null;
 if ($showLanding && $showNewRelease && isset($pdo)) {
     try {
         $nst = $pdo->query(
-            "SELECT p.* FROM products p
+            "SELECT p.*, cp.slug AS canvas_slug FROM products p
+             LEFT JOIN canvas_pages cp ON cp.id = p.canvas_id AND cp.is_active = 1
              WHERE p.status = 'active' AND p.hide_from_catalog = 0
              ORDER BY p.created_at DESC, p.id DESC LIMIT 1"
         );
@@ -285,12 +287,19 @@ $brandGrad = 'background: var(--brand-color);';
 
 <?php
 // Dua seksi memakai satu markup agar harga, CTA, dan tampilan selalu konsisten.
+$examLabels = ['wsl-1' => 'WSL 1', 'wsl-2' => 'WSL 2', 'wst-health' => 'WST Health',
+    'wst-learning' => 'WST Learning', 'wst-tahfizh' => 'WST Tahfizh'];
 $spotlights = [];
-if ($featured) $spotlights[] = ['product' => $featured, 'title' => 'Produk Unggulan', 'badge' => 'Terlaris', 'is_new' => false];
+if ($featured) $spotlights[] = ['product' => $featured, 'title' => 'Produk Unggulan', 'badge' => (int) $featured['sold_count'] > 0 ? 'Terlaris' : '', 'is_new' => false];
 if ($newRelease) $spotlights[] = ['product' => $newRelease, 'title' => 'Produk Baru Rilis', 'badge' => 'Baru Rilis', 'is_new' => true];
 foreach ($spotlights as $spotlight):
   $spotlightProduct = $spotlight['product'];
   $spotlightNew = $spotlight['is_new'];
+  $examLabel = $examLabels[$spotlightProduct['slug']] ?? '';
+  $spotlightPath = '/products/' . rawurlencode($spotlightProduct['slug']);
+  if ($examLabel !== '' && ($spotlightProduct['lp_type'] ?? '') === 'canvas' && !empty($spotlightProduct['canvas_slug'])) {
+      $spotlightPath = '/' . rawurlencode($spotlightProduct['canvas_slug']) . '/';
+  }
   $sPrice = (float) $spotlightProduct['price']; $sOrig = (float) $spotlightProduct['original_price'];
   if (!empty($spotlightProduct['dime_enabled']) && ($spotlightProduct['pricing_type'] ?? 'fixed') !== 'flexible') { $sPrice = dimeEffectivePrice($spotlightProduct); $sOrig = $sPrice; }
   $sFlex = ($spotlightProduct['pricing_type'] ?? 'fixed') === 'flexible';
@@ -310,14 +319,20 @@ foreach ($spotlights as $spotlight):
     <?php endif; ?>
     <h2 class="text-lg font-bold text-gray-900 dark:text-white"><?= e($spotlight['title']) ?></h2>
   </div>
-  <a href="<?= e(APP_URL) ?>/products/<?= e($spotlightProduct['slug']) ?>"
+  <a href="<?= e(rtrim(APP_URL, '/') . $spotlightPath) ?>"
      class="group grid md:grid-cols-2 gap-0 rounded-2xl overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-xl transition-all md:min-h-[300px] md:max-h-[340px]">
     <div class="relative aspect-[16/10] md:aspect-auto overflow-hidden bg-gray-100 dark:bg-gray-800">
       <?php if ($spotlightProduct['thumbnail']): ?>
       <img src="<?= e($spotlightProduct['thumbnail']) ?>" alt="<?= e($spotlightProduct['name']) ?>" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+      <?php elseif ($examLabel !== ''): ?>
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-white" style="background:linear-gradient(135deg,#123d30,#225e49)">
+        <span class="text-xs font-semibold uppercase tracking-widest" style="color:#ddc89a">Biaya Ujian</span>
+        <span class="mt-2 text-3xl font-bold"><?= e($examLabel) ?></span>
+      </div>
       <?php else: ?>
       <div class="absolute inset-0 w-full h-full flex items-center justify-center" style="<?= $brandGrad ?>"><svg class="w-14 h-14 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div>
       <?php endif; ?>
+      <?php if ($spotlight['badge'] !== ''): ?>
       <span class="absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold shadow <?= $spotlightNew ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' : 'bg-amber-400 text-amber-900' ?>">
         <?php if ($spotlightNew): ?>
         <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8 3 3M19 5l-3 3M8 16l-3 3"/></svg>
@@ -326,6 +341,7 @@ foreach ($spotlights as $spotlight):
         <?php endif; ?>
         <?= e($spotlight['badge']) ?>
       </span>
+      <?php endif; ?>
     </div>
     <div class="p-6 sm:p-8 flex flex-col justify-center">
       <span class="inline-flex w-fit px-2 py-0.5 rounded-md text-xs font-medium mb-3 <?= $typeBadge($spotlightProduct['type']) ?>"><?= e(productCatalogLabel($spotlightProduct)) ?></span>
@@ -498,6 +514,10 @@ if (!empty($activeBundles)):
       <div class="relative overflow-hidden aspect-[4/3]">
         <?php if ($product['thumbnail']): ?>
         <img src="<?= e($product['thumbnail']) ?>" alt="<?= e($product['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+        <?php elseif (isset($examLabels[$product['slug']])): ?>
+        <div class="w-full h-full flex items-center justify-center text-white text-2xl font-bold" style="background:linear-gradient(135deg,#123d30,#225e49)">
+          <?= e($examLabels[$product['slug']]) ?>
+        </div>
         <?php else: ?>
         <div class="w-full h-full flex items-center justify-center" style="<?= $brandGrad ?>"><svg class="w-10 h-10 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/></svg></div>
         <?php endif; ?>

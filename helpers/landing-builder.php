@@ -603,6 +603,18 @@ function avLbRenderPage(array $page): string
     $theme  = $env['theme'];
     $blocks = $env['blocks'];
 
+    $examLanding = ($page['page_type'] ?? '') === 'product_landing'
+        && in_array($page['slug'] ?? '', ['ujian-wsl-1', 'ujian-wsl-2', 'ujian-wst-health', 'ujian-wst-learning', 'ujian-wst-tahfizh'], true);
+    if ($examLanding) {
+        $sampleFeatures = avLbRegistry()['pricing']['defaults']['features'];
+        foreach ($blocks as &$block) {
+            if ($block['type'] === 'pricing' && ($block['cfg']['features'] ?? '') === $sampleFeatures) {
+                $block['cfg']['features'] = '';
+            }
+        }
+        unset($block);
+    }
+
     // Konteks: map produk id → {slug,name} untuk resolusi CTA.
     $ctx = ['app_url' => rtrim(APP_URL, '/'), 'products' => [], 'magnet' => null, 'csrf' => ''];
     $pids = [];
@@ -655,6 +667,21 @@ function avLbRenderPage(array $page): string
     $title = trim((string) ($page['title'] ?? 'Landing Page'));
     $desc  = trim((string) ($page['meta_desc'] ?? ''));
     $css   = avLbShellCss($theme);
+    if ($examLanding) {
+        $css .= <<<'CSS'
+
+.lp-exam .lp-hero{padding:38px 24px;background:color-mix(in srgb,currentColor 5%,transparent)}
+.lp-exam .lp-pricecard .lp-cta{margin-top:14px}
+@media (min-width: 760px) {
+  .lp-exam{max-width:980px;min-height:auto;margin:32px auto;border-radius:20px;overflow:hidden;box-shadow:0 16px 48px #172b241a}
+  .lp-exam .lp-hero{padding:64px 44px}
+  .lp-exam .lp-h1{font-size:clamp(32px,4vw,46px)}
+  .lp-exam .lp-sub{max-width:60ch;margin:0 auto 22px}
+  .lp-exam .lp-sec:not(.lp-hero){padding:24px 52px}
+  .lp-exam .lp-pricecard{max-width:440px;margin:0 auto}
+}
+CSS;
+    }
     $js    = avLbRuntimeJs();
 
     $head = '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">'
@@ -663,7 +690,7 @@ function avLbRenderPage(array $page): string
     if ($desc !== '') $head .= '<meta name="description" content="' . e($desc) . '">';
     $head .= '<style>' . $css . '</style></head>';
 
-    return $head . '<body><div class="lp-wrap">' . $body . $footer . '</div><script>' . $js . '</script></body></html>';
+    return $head . '<body><div class="lp-wrap' . ($examLanding ? ' lp-exam' : '') . '">' . $body . $footer . '</div><script>' . $js . '</script></body></html>';
 }
 
 } // function_exists guard
