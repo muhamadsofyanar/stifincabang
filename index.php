@@ -101,6 +101,7 @@ $routes = [
     '#^/admin/promotor-cabang$#'                   => ['pages/admin/stifin-promoters.php',   []],
     '#^/admin/kantor-cabang$#'                     => ['pages/admin/stifin-office.php',      []],
     '#^/admin/peserta-tes$#'                       => ['pages/admin/stifin-participants.php', []],
+    '#^/admin/data-resmi-cabang$#'                 => ['pages/admin/stifin-official-reports.php', []],
     '#^/admin/laporan-cabang$#'                    => ['pages/admin/stifin-reports.php', []],
     '#^/member/stifin-saya$#'                      => ['pages/user/stifin-office.php', []],
     '#^/admin/voucher-tes$#'                        => ['pages/admin/stifin-vouchers.php',    []],

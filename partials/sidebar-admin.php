@@ -200,6 +200,9 @@ $userEmail = $_SESSION['email'] ?? '';
     <a href="<?= e(APP_URL) ?>/admin/peserta-tes" class="<?= $navClass('/admin/peserta-tes') ?>">
       <span>Peserta &amp; Jadwal Tes</span>
     </a>
+    <a href="<?= e(APP_URL) ?>/admin/data-resmi-cabang" class="<?= $navClass('/admin/data-resmi-cabang') ?>">
+        <span>Data Resmi App Cabang</span>
+    </a>
     <a href="<?= e(APP_URL) ?>/admin/laporan-cabang" class="<?= $navClass('/admin/laporan-cabang') ?>">
       <span>Laporan Cabang</span>
     </a>

@@ -1,0 +1,21 @@
+# Data Resmi App Cabang di STIFIn Mulia
+
+Pembaruan ini menambahkan menu admin **Data Resmi App Cabang** untuk hasil tes, rekap tes, serta transaksi voucher Pusat dan Cabang. Data disalin ke Mulia melalui impor admin. Setiap laporan juga menyediakan tautan langsung ke menu sumbernya di App Cabang.
+
+## Upload ke GitHub dan redeploy di Coolify
+
+1. Buat cadangan database produksi dan catat commit yang sedang aktif.
+2. Ekstrak ZIP. Unggah isi folder hasil ekstrak ke root branch yang dipakai Coolify. Sertakan file tersembunyi bawaan seperti `.htaccess`, `.dockerignore`, dan `.env.example`. Jaga file konfigurasi khusus repo Anda. Simpan kredensial, token, salinan database, dan file konfigurasi produksi di luar GitHub.
+3. Pertahankan konfigurasi Coolify yang sekarang, termasuk Dockerfile, port HTTP internal 80, domain, database, dan volume persisten `/data`. Pastikan `STIFIN_BRANCH_CODE` diisi kode cabang resmi.
+4. Redeploy. Entrypoint menjalankan migrasi idempoten untuk instalasi yang sudah aktif. Periksa log startup bila menu menampilkan bahwa laporan belum tersedia. Untuk pemasangan baru, jalankan kembali deployment setelah konfigurasi dan instalasi database selesai.
+5. Masuk sebagai admin dan buka **Data Resmi App Cabang**. Coba satu CSV dengan data uji di staging. Verifikasi impor ulang referensi yang sama, filter bulan, penolakan tanggal tidak valid, dan pembatasan akses pengguna biasa. Verifikasi juga menu promotor dan saldo lama sebelum memakai build di produksi.
+
+## Format dan cakupan CSV
+
+Unduh template masing-masing dari Mulia. Salin laporan App Cabang yang diizinkan untuk cabang Anda ke template tersebut. Format template Mulia memakai UTF-8, pemisah koma, dan satu baris header. Gunakan tanggal `YYYY-MM-DD` dan referensi stabil per catatan. Untuk hasil tes, gunakan ID laporan yang diizinkan dan kode hasil tanpa nama peserta, data kontak, atau data biometrik. Kode promotor boleh kosong untuk catatan tingkat cabang. Untuk rekap gunakan jumlah tes. Untuk voucher gunakan kuantitas bertanda sesuai sumber.
+
+Setiap impor menampung maksimal 5.000 catatan dan 2 MB. Catatan dengan referensi yang sama pada cabang dan jenis laporan yang sama diperbarui. Catatan yang tidak tercantum dalam impor berikutnya tetap ada. Satu impor dibatalkan seluruhnya apabila salah satu catatan gagal. Riwayat voucher Mulia tetap tersedia di **Laporan Cabang**.
+
+## Akun resmi
+
+Menu akun menyediakan tautan perubahan password dan pengelolaan password promotor di App Cabang. Perubahan User ID Pusat, perubahan password melalui Mulia, pengiriman voucher ke Pusat, serta sinkronisasi otomatis memerlukan kontrak API dan izin dari pengelola STIFIn. Rute yang terlihat di navigasi App Cabang adalah rute antarmuka pengguna. Template impor ini mengikuti kebutuhan Mulia dan belum dicocokkan dengan berkas ekspor aktual dari Pusat.

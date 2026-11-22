@@ -9,6 +9,8 @@ COPY . /var/www/html/
 RUN php -l /var/www/html/index.php \
     && php -l /var/www/html/pages/admin/stifin-office.php \
     && php -l /var/www/html/pages/admin/stifin-participants.php \
+    && php -l /var/www/html/pages/admin/stifin-official-reports.php \
+    && php -l /var/www/html/helpers/stifin-official-reports.php \
     && php -l /var/www/html/pages/admin/stifin-reports.php \
     && php -l /var/www/html/pages/admin/stifin-promoters.php \
     && php -l /var/www/html/helpers/stifin-promoters.php \
