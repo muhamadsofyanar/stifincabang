@@ -13,6 +13,7 @@ RUN php -l /var/www/html/index.php \
     && php -l /var/www/html/helpers/stifin-official-reports.php \
     && php -l /var/www/html/pages/admin/stifin-reports.php \
     && php -l /var/www/html/pages/admin/stifin-promoters.php \
+    && php -l /var/www/html/helpers/stifin-voucher-transfers.php \
     && php -l /var/www/html/helpers/stifin-promoters.php \
     && php -l /var/www/html/pages/user/stifin-office.php \
     && php -l /var/www/html/scripts/setup-stifin-office.php

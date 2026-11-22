@@ -114,10 +114,14 @@ include __DIR__ . '/../../partials/head.php';
     <div class="flex-1 flex flex-col overflow-hidden lg:ml-60">
         <?php include __DIR__ . '/../../partials/topbar.php'; ?>
         <main class="flex-1 overflow-y-auto p-5 lg:p-6 space-y-4">
-            <h1 class="text-2xl font-bold">Data Resmi App Cabang</h1>
-            <nav class="flex flex-wrap gap-3" aria-label="Jenis laporan">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h1 class="text-2xl font-bold">Data Resmi App Cabang</h1>
+                <a class="rounded-lg border px-3 py-2 text-sm" href="<?= e(APP_URL) ?>/admin/kantor-cabang">Kantor Virtual Cabang</a>
+            </div>
+            <nav class="flex flex-wrap gap-2" aria-label="Jenis laporan">
                 <?php foreach ($reports as $key => [$name]): ?>
-                    <a class="underline" <?= $key === $type ? 'aria-current="page"' : '' ?>
+                    <a class="rounded-lg border px-3 py-2 text-sm font-semibold <?= $key === $type
+                           ? 'bg-emerald-900 text-white' : 'bg-white dark:bg-gray-900' ?>" <?= $key === $type ? 'aria-current="page"' : '' ?>
                        href="<?= e(APP_URL . '/admin/data-resmi-cabang?laporan=' . $key . '&bulan=' . $month) ?>"><?= e($name) ?></a>
                 <?php endforeach; ?>
             </nav>

@@ -30,6 +30,27 @@ try {
     $stmt = getDB()->prepare('SELECT participant_name,scheduled_at,status FROM stifin_test_registrations WHERE branch_code=? AND promoter_code=? ORDER BY id DESC LIMIT 200');
     $stmt->execute([$branch,$code]); $rows = $stmt->fetchAll();
 } catch (Throwable $e) { $error = 'Catatan tes belum tersedia.'; }
+$reportMonth = $_GET['bulan_hasil'] ?? date('Y-m');
+if (!is_string($reportMonth) || !preg_match('/^[1-9]\d{3}-(0[1-9]|1[0-2])$/D', $reportMonth)) {
+    $reportMonth = date('Y-m');
+}
+$reportRows = null;
+if ($profile !== null && $profile['active'] === true) {
+    try {
+        $monthStart = new DateTimeImmutable($reportMonth . '-01');
+        $reportQuery = getDB()->prepare(
+            "SELECT source_ref, report_date, report_value, COUNT(*) OVER () AS total_rows
+             FROM stifin_official_report_rows
+             WHERE branch_code = ? AND promoter_code = ? AND report_type = 'hasil'
+               AND report_date >= ? AND report_date < ?
+             ORDER BY report_date DESC, source_ref LIMIT 100"
+        );
+        $reportQuery->execute([$branch, $code, $monthStart->format('Y-m-d'), $monthStart->modify('+1 month')->format('Y-m-d')]);
+        $reportRows = $reportQuery->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $error) {
+        error_log('STIFIn promoter results unavailable');
+    }
+}
 include __DIR__ . '/../../partials/head.php';
 ?>
 <body class="bg-gray-50 dark:bg-gray-950 antialiased"><div class="flex h-screen overflow-hidden"><?php include __DIR__ . '/../../partials/sidebar-user.php'; ?><div class="flex-1 flex flex-col overflow-hidden lg:ml-60"><?php include __DIR__ . '/../../partials/topbar.php'; ?><main class="flex-1 overflow-y-auto p-5 lg:p-6 space-y-4">
@@ -38,4 +59,40 @@ include __DIR__ . '/../../partials/head.php';
 <div class="flex flex-wrap gap-3"><a class="rounded border p-3" href="<?= e(APP_URL) ?>/member/voucher-tes?cek_saldo=1">Saldo &amp; riwayat voucher</a><a class="rounded border p-3" href="<?= e(APP_URL) ?>/transactions">Transaksi saya</a><a class="rounded border p-3" href="<?= e(APP_URL) ?>/kajian">Kajian</a><a class="rounded border p-3" href="<?= e(APP_URL) ?>/katalog">Workshop</a></div>
 <form method="post" class="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-3"><h2 class="font-bold">Daftarkan peserta tes lokal</h2><p>Catatan ini masuk ke dashboard admin cabang. Pastikan peserta menyetujui pencatatan datanya.</p><input type="hidden" name="csrf_token" value="<?= e(generateCSRF()) ?>"><label>Nama peserta<input name="participant_name" maxlength="160" required class="block w-full border rounded p-2 dark:bg-gray-950"></label><label>Jadwal (opsional)<input type="datetime-local" name="scheduled_at" class="block border rounded p-2 dark:bg-gray-950"></label><button class="rounded px-4 py-2 text-white" style="background:#123d30">Daftarkan</button></form>
 <h2 class="font-bold">Peserta dan jadwal saya</h2><p>Catatan lokal cabang, bukan hasil tes resmi pusat.</p><?php if ($error): ?><p role="alert"><?= e($error) ?></p><?php else: ?><div class="rounded-xl border overflow-x-auto bg-white dark:bg-gray-900"><table class="w-full text-left text-sm"><thead><tr><th class="p-3">Peserta</th><th>Jadwal</th><th>Status</th></tr></thead><tbody><?php foreach ($rows as $row): ?><tr class="border-t"><td class="p-3"><?= e($row['participant_name']) ?></td><td><?= e($row['scheduled_at'] ?? '—') ?></td><td><?= e($states[$row['status']] ?? '—') ?></td></tr><?php endforeach; ?><?php if (!$rows): ?><tr><td colspan="3" class="p-3">Belum ada catatan.</td></tr><?php endif; ?></tbody></table></div><?php endif; ?>
+<section class="rounded-xl border bg-white dark:bg-gray-900 p-5 space-y-3">
+    <h2 class="font-bold">Hasil &amp; rekap tes saya</h2>
+    <?php if ($profile === null || $profile['active'] !== true): ?>
+        <p>Akses hasil tersedia setelah status promotor aktif terverifikasi di direktori STIFIn.</p>
+    <?php else: ?>
+        <form method="get" action="<?= e(APP_URL) ?>/member/stifin-saya" class="flex flex-wrap items-end gap-3">
+            <label>Bulan hasil
+                <input type="month" name="bulan_hasil" value="<?= e($reportMonth) ?>"
+                       class="block rounded border p-2 dark:bg-gray-950">
+            </label>
+            <button class="rounded border p-2">Tampilkan</button>
+        </form>
+        <?php if ($reportRows === null): ?>
+            <p>Laporan sedang tidak tersedia.</p>
+        <?php elseif (!$reportRows): ?>
+            <p>Mulia belum memiliki hasil untuk kode promotor Anda pada bulan ini.</p>
+        <?php else: $totalResults = (int) $reportRows[0]['total_rows']; ?>
+            <p><?= $totalResults ?> hasil tercatat dari laporan resmi yang sudah masuk ke Mulia.</p>
+            <?php if ($totalResults > 100): ?><p>Menampilkan 100 hasil terbaru.</p><?php endif; ?>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead><tr><th>Referensi</th><th>Tanggal</th><th>Hasil</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($reportRows as $result): ?>
+                        <tr class="border-t">
+                            <td><?= e($result['source_ref']) ?></td>
+                            <td><?= e($result['report_date']) ?></td>
+                            <td><?= e($result['report_value']) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    <?php endif; ?>
+</section>
 </main></div></div><?php include __DIR__ . '/../../partials/footer.php'; ?>

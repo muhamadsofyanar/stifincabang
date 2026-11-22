@@ -25,3 +25,9 @@ Jika bulan yang dipilih belum memiliki rekap impor, tab rekap menampilkan jumlah
 ## Direktori promotor
 
 Halaman **Promotor Cabang** menyediakan pencarian nama, kode, area dan lembaga, serta filter promotor aktif dan promotor aktif tanpa akses Mulia. Status akses memakai penautan yang sudah ada dan status akun anggota di Mulia. Ekspor direktori tetap mencakup seluruh daftar cabang. Cek saldo tetap dilakukan untuk promotor yang dipilih.
+
+Promotor yang tertaut ke akun Mulia dan berstatus aktif di direktori resmi dapat membuka **STIFIn Saya → Hasil & rekap tes saya**. Bagian ini menampilkan hasil yang sudah masuk ke Mulia dan terikat pada kode cabang serta kode promotor miliknya. Uji dengan dua akun promotor di cabang yang sama sebelum mengandalkan fitur di produksi.
+
+## Operasional dan voucher
+
+Kantor Virtual Cabang menampilkan pendaftaran menunggu jadwal, tes terjadwal, voucher yang perlu diperiksa, dan akses langsung ke modul kerja. Antrean voucher tetap mengikuti pengaturan Coolify yang ada. Ketika transfer aktif, worker memverifikasi keanggotaan promotor di direktori resmi sebelum pengiriman, memeriksa penolakan API, dan hanya mencatat terkirim setelah saldo cocok. Periksa status **Perlu dicek** berdasarkan nomor invoice di App Cabang. Uji dengan lingkungan dan akun uji yang sesuai sebelum mengaktifkan transfer nyata.

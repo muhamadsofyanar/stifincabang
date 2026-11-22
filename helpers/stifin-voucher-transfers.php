@@ -27,6 +27,28 @@ function stifinVoucherTransferPayload(array $job, array $balance, string $apiUse
     ];
 }
 
+function stifinValidateVoucherTransferResponse(string $response): void
+{
+    if (trim($response) === '') {
+        return;
+    }
+    $result = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+    if ($result === null) {
+        return;
+    }
+    if (!is_array($result)) {
+        throw new RuntimeException('Format respons transfer tidak dikenali.');
+    }
+
+    $status = $result['status'] ?? null;
+    $error = $result['error'] ?? null;
+    if (($result['success'] ?? null) === false || $status === false
+        || (is_string($status) && in_array(strtolower(trim($status)), ['error', 'failed', 'failure', 'gagal'], true))
+        || !in_array($error, [null, false, ''], true)) {
+        throw new RuntimeException('API STIFIn menolak transfer.');
+    }
+}
+
 function stifinProcessVoucherTransfers(PDO $db): void
 {
     if (!stifinVoucherTransferEnabled()) {
@@ -54,8 +76,18 @@ function stifinProcessVoucherTransfers(PDO $db): void
             WHERE q.transfer_status = 'pending' AND o.status = 'paid'
             ORDER BY q.transfer_checked_at, q.id LIMIT 5");
         $jobs->execute();
-        foreach ($jobs->fetchAll(PDO::FETCH_ASSOC) as $job) {
-            stifinProcessVoucherTransfer($db, $job, $branch, $apiUser);
+        $pending = $jobs->fetchAll(PDO::FETCH_ASSOC);
+        if (!$pending) {
+            return;
+        }
+        $activePromoters = [];
+        foreach (stifinBranchPromoters($branch) as $promoter) {
+            if ($promoter['active'] === true) {
+                $activePromoters[$promoter['code']] = true;
+            }
+        }
+        foreach ($pending as $job) {
+            stifinProcessVoucherTransfer($db, $job, $branch, $apiUser, $activePromoters);
         }
     } finally {
         $release = $db->prepare('SELECT RELEASE_LOCK(?)');
@@ -64,13 +96,13 @@ function stifinProcessVoucherTransfers(PDO $db): void
     }
 }
 
-function stifinProcessVoucherTransfer(PDO $db, array $job, string $branch, string $apiUser): void
+function stifinProcessVoucherTransfer(PDO $db, array $job, string $branch, string $apiUser, array $activePromoters): void
 {
     $id = (int) $job['id'];
     $quantity = stifinVoucherQuantity($job['quantity']);
     $code = $job['transfer_promoter'];
     if ($job['transfer_branch'] !== $branch || !$quantity || !$job['order_number']
-        || !$code || $code !== stifinLinkedPromoterCode($db, (int) $job['user_id'])) {
+        || !$code || !isset($activePromoters[$code]) || $code !== stifinLinkedPromoterCode($db, (int) $job['user_id'])) {
         $db->prepare("UPDATE stifin_voucher_queue SET transfer_status = 'review',
             transfer_note = 'Periksa cabang, akun promotor, jumlah, dan nomor invoice sebelum transfer manual.'
             WHERE id = ? AND transfer_status = 'pending'")->execute([$id]);
@@ -92,7 +124,7 @@ function stifinProcessVoucherTransfer(PDO $db, array $job, string $branch, strin
     // Simpan status sebelum POST. Jika proses terputus, periksa mutasi di STIFIn sebelum tindakan manual.
     $claim = $db->prepare("UPDATE stifin_voucher_queue q
         JOIN orders o ON o.id = q.order_id AND o.user_id = q.user_id
-        SET q.transfer_status = 'review', q.transfer_note = 'Periksa mutasi STIFIn berdasarkan nomor invoice.'
+        SET q.transfer_status = 'review', q.transfer_checked_at = NOW(), q.transfer_note = 'Periksa mutasi STIFIn berdasarkan nomor invoice.'
         WHERE q.id = ? AND q.transfer_status = 'pending' AND o.status = 'paid'");
     $claim->execute([$id]);
     if ($claim->rowCount() !== 1) {
@@ -100,8 +132,9 @@ function stifinProcessVoucherTransfer(PDO $db, array $job, string $branch, strin
     }
 
     try {
-        stifinPromoterApiRequest('/voucherPos/editCabVoucher/' . rawurlencode($branch),
+        $response = stifinPromoterApiRequest('/voucherPos/editCabVoucher/' . rawurlencode($branch),
             stifinVoucherTransferPayload($job, $balance, $apiUser));
+        stifinValidateVoucherTransferResponse($response);
         $after = stifinPromoterBalance($code);
         if ($after['voucher'] === $balance['voucher'] + $quantity && $after['free'] === $balance['free']) {
             $db->prepare("UPDATE stifin_voucher_queue SET transfer_status = 'sent', transfer_note = NULL,
