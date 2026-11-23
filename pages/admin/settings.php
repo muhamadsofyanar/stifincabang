@@ -321,6 +321,11 @@ $saveBtn  = 'px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand hove
                   <p class="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">Mengganti mata uang hanya menukar <strong>simbol &amp; format angka</strong> di seluruh aplikasi — <strong>tidak mengonversi kurs</strong>. Masukkan harga produk dalam nilai mata uang ini. Saat mata uang bukan IDR, badge "Harga Alias Ringgit" per-produk otomatis dinonaktifkan.</p>
                 </div>
                 <div>
+                  <label for="order-wa" class="block text-sm font-medium mb-1.5">WhatsApp admin untuk konfirmasi pesanan</label>
+                  <input id="order-wa" type="tel" name="settings[order_confirmation_whatsapp]" pattern="[1-9][0-9]{7,14}" value="<?= e($s('order_confirmation_whatsapp', '')) ?>" class="<?= $inputCls ?>">
+                  <p class="text-xs mt-1">Isi dengan kode negara (62 untuk Indonesia), tanpa tanda plus atau spasi. Saat terisi, pelanggan mengirim konfirmasi dari halaman pesanan. Kosongkan untuk kembali ke pengiriman sesuai templat otomatis.</p>
+                </div>
+                <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Batas Waktu Order Pending</label>
                   <div class="flex items-center gap-2">
                     <input type="number" name="settings[order_expiry_hours]" value="<?= e($s('order_expiry_hours', '0')) ?>" min="0" max="720" class="w-32 <?= $inputCls ?>">

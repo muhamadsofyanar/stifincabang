@@ -53,6 +53,11 @@ class NotificationDispatcher {
             $templates = $stmt->fetchAll();
 
             foreach ($templates as $template) {
+                if ($template['channel'] === 'whatsapp' && !$force
+                    && in_array($eventKey, ['order_created', 'public_checkout_welcome'], true)
+                    && getSetting('order_confirmation_whatsapp', '') !== '') {
+                    continue;
+                }
                 // Filter 1 channel (Kirim Ulang manual: admin pilih WhatsApp / Email).
                 if ($onlyChannel !== '' && $template['channel'] !== $onlyChannel) continue;
 

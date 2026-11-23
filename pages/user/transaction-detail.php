@@ -175,6 +175,7 @@ $statusConfig = match ($order['status']) {
         </script>
         <?php endif; ?>
 
+      <?php require __DIR__ . '/../../partials/order-confirmation-wa.php'; ?>
         <?php
         // Booking Fee: info tahap order (booking / pelunasan) + deadline pelunasan.
         $orderStage = $order['order_stage'] ?? 'full';

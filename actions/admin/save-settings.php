@@ -35,7 +35,7 @@ $allowedKeys = [
     'appearance'    => ['dark_mode_default', 'ui_theme', 'ui_sidebar_style', 'ui_topbar_style'],
     'points'        => ['points_enabled', 'points_label', 'points_menu_label', 'points_earn_per_amount', 'points_value', 'points_min_redeem', 'points_max_discount_percent'],
     'affiliate'     => ['affiliate_enabled', 'affiliate_commission_rate', 'min_payout_amount', 'affiliate_mode', 'affiliate_leaderboard_enabled', 'affiliate_general_cookie', 'affiliate_cookie_days', 'affiliate_lock_customer', 'affiliate_zero_no_commission', 'affiliate_menu_show_all'],
-    'payment'       => ['currency', 'currency_symbol', 'order_expiry_hours'],
+    'payment'       => ['currency', 'currency_symbol', 'order_expiry_hours', 'order_confirmation_whatsapp'],
     'general'       => ['app_version'],
     'integrations'  => [
         'payment_active_gateway',
@@ -64,6 +64,14 @@ if ($group === 'branding') {
         $allowedKeys['branding'],
         $allowedKeys['appearance']
     );
+}
+
+if ($group === 'payment' && isset($postVals['order_confirmation_whatsapp'])) {
+    $number = trim((string) $postVals['order_confirmation_whatsapp']);
+    if ($number !== '' && !preg_match('/^[1-9][0-9]{7,14}$/D', $number)) {
+        saveResult(false, 'Masukkan nomor WhatsApp admin dengan kode negara dan angka saja.', '/admin/settings');
+    }
+    $postVals['order_confirmation_whatsapp'] = $number;
 }
 
 $permitted = $allowedKeys[$group] ?? [];

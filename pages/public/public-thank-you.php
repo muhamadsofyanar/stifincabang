@@ -314,6 +314,7 @@ if ($isPaid) {
       include __DIR__ . '/../../partials/_upsell-offer.php';
       ?>
 
+      <?php require __DIR__ . '/../../partials/order-confirmation-wa.php'; ?>
       <!-- 3. RINGKASAN ORDER -->
       <div class="py-5 space-y-2.5 text-sm border-b border-gray-100">
         <div class="flex items-center justify-between">
