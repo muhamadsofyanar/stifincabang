@@ -74,11 +74,19 @@ function mailketing_enqueue_order_created(int $userId, array $fallback = []): vo
  */
 function processMailketingQueue(int $limit = 40): void
 {
+    $locked = false;
     try {
         try { getDB()->exec("DELETE FROM mailketing_queue WHERE created_at < NOW() - INTERVAL 7 DAY"); }
         catch (Throwable $e) {}
         $token = getSetting('mailketing_api_token', '') ?: getSetting('mailketing_api_key', '');
         if (trim((string) $token) === '') return;   // token belum diisi
+        $pdo = getDB();
+        // Auto-cron dan cron server memakai antrean yang sama.
+        $lockName = 'mailketing:' . substr(hash('sha256', (string) $pdo->query('SELECT DATABASE()')->fetchColumn()), 0, 48);
+        $lock = $pdo->prepare('SELECT GET_LOCK(?, 0)');
+        $lock->execute([$lockName]);
+        $locked = (int) $lock->fetchColumn() === 1;
+        if (!$locked) return;
         require_once dirname(__DIR__) . '/helpers/MailketingClient.php';
         $limit = max(1, min(100, $limit));
         $rows = getDB()->query(
@@ -107,5 +115,13 @@ function processMailketingQueue(int $limit = 40): void
         }
     } catch (Throwable $e) {
         error_log('processMailketingQueue: ' . $e->getMessage());
+    } finally {
+        if ($locked) {
+            try {
+                $pdo->prepare('SELECT RELEASE_LOCK(?)')->execute([$lockName]);
+            } catch (Throwable $e) {
+                error_log('Mailketing release lock: ' . $e->getMessage());
+            }
+        }
     }
 }

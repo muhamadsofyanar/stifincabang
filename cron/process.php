@@ -42,6 +42,9 @@ $out = ['ran_at' => date('c')];
 // 0. Detak jantung — indikator "cron terakhir jalan" di dashboard & system-health.
 try { cronHeartbeat('cron'); } catch (Throwable $e) { error_log('cron heartbeat: ' . $e->getMessage()); }
 
+// Tambahkan kontak order dan pembayaran ke list Mailketing.
+processMailketingQueue(40);
+
 // 1. Email Sequence
 try {
     $out['email_sequence'] = processDueSequenceSends(100);
