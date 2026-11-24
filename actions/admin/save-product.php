@@ -99,7 +99,9 @@ $resellProductId  = ($resellProductId > 0 && $resellProductId !== $productId) ? 
 // admin cukup mengaktifkan halaman.
 $accessEnabled = ((int) ($_POST['access_page_enabled'] ?? 0) === 1) ? 1 : 0;
 // Mode akses "Embed langsung" (v1.2.148): produk yang isinya satu embed HTML/URL.
-$accessType = (($_POST['access_type'] ?? 'course') === 'embed') ? 'embed' : 'course';
+$accessType = $_POST['access_type'] ?? 'course';
+$accessType = in_array($accessType, ['course', 'embed', 'canvas'], true) ? $accessType : 'course';
+$accessCanvasId = $accessType === 'canvas' ? (int) ($_POST['access_canvas_id'] ?? 0) : null;
 $embedHtml  = trim((string) ($_POST['embed_html'] ?? ''));
 $embedUrl   = trim((string) ($_POST['embed_url'] ?? ''));
 if ($embedUrl !== '' && !preg_match('#^https?://#i', $embedUrl)) $embedUrl = '';
@@ -253,7 +255,7 @@ if ($lpType === 'canvas') {
         $errors[] = 'Pilih Canvas terlebih dahulu.';
     } else {
         try {
-            $cvChk = getDB()->prepare("SELECT id FROM canvas_pages WHERE id = ? LIMIT 1");
+            $cvChk = getDB()->prepare("SELECT id FROM canvas_pages WHERE id = ? AND page_type <> 'product_access' LIMIT 1");
             $cvChk->execute([$canvasId]);
             if (!$cvChk->fetch()) {
                 $errors[] = 'Canvas yang dipilih tidak ditemukan.';
@@ -302,6 +304,16 @@ try {
     // SELURUH simpan produk (termasuk Booking Fee).
     ensureProductFeatureColumns($pdo);
     if (function_exists('ensureEmbedAccessColumns')) ensureEmbedAccessColumns($pdo);
+
+    if ($accessType === 'canvas') {
+        $canvas = $pdo->prepare("SELECT id FROM canvas_pages WHERE id = ? AND page_type = 'product_access'
+                                 AND is_active = 1 AND mode IN ('builder', 'embed')");
+        $canvas->execute([$accessCanvasId]);
+        if (!$canvas->fetchColumn()) {
+            flash('error', 'Pilih Canvas Halaman Akses Produk yang aktif.', 'error');
+            redirect('/admin/products' . ($isEdit ? '?edit=' . $productId : ''));
+        }
+    }
 
     // Gunakan ejaan kategori yang sudah ada agar filter tidak memecah nama serupa.
     if ($catalogCategory !== '') {
@@ -357,7 +369,7 @@ try {
                  reviews_enabled = ?,
                  salespage_enabled = ?, resell_product_id = ?,
                  access_page_enabled = ?,
-                 access_type = ?, embed_html = ?, embed_url = ?,
+                 access_type = ?, embed_html = ?, embed_url = ?, access_canvas_id = ?,
                  updated_at = NOW()
              WHERE id = ?'
         );
@@ -378,7 +390,7 @@ try {
             $reviewsEnabled,
             $salespageEnabled, $resellProductId,
             $accessEnabled,
-            $accessType, ($embedHtml !== '' ? $embedHtml : null), ($embedUrl !== '' ? $embedUrl : null),
+            $accessType, ($embedHtml !== '' ? $embedHtml : null), ($embedUrl !== '' ? $embedUrl : null), $accessCanvasId,
             $productId,
         ]);
         logActivity('admin', 'product.update', 'product', $productId, 'Produk: ' . $name);
@@ -402,8 +414,8 @@ try {
               reviews_enabled,
               salespage_enabled, resell_product_id,
               access_page_enabled,
-              access_type, embed_html, embed_url)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+              access_type, embed_html, embed_url, access_canvas_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $name, $slug, $type, $catalogCategory, $status, $hideFromCatalog, $launchAt,
@@ -422,7 +434,7 @@ try {
             $reviewsEnabled,
             $salespageEnabled, $resellProductId,
             $accessEnabled,
-            $accessType, ($embedHtml !== '' ? $embedHtml : null), ($embedUrl !== '' ? $embedUrl : null),
+            $accessType, ($embedHtml !== '' ? $embedHtml : null), ($embedUrl !== '' ? $embedUrl : null), $accessCanvasId,
         ]);
         $productId = (int) $pdo->lastInsertId();
         logActivity('admin', 'product.create', 'product', $productId, 'Produk: ' . $name);

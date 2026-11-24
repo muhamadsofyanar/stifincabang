@@ -958,7 +958,7 @@ function processBookingOrders(int $limit = 20): array
         // ── 1) Buat order pelunasan untuk booking yang sudah paid ──
         $stmt = $pdo->prepare(
             "SELECT o.id, o.order_number, o.user_id, o.subtotal, o.setup_fee, o.booking_fee,
-                    o.payment_gateway, o.referral_code,
+                    o.payment_gateway, o.referral_code, o.utm_source,
                     u.name AS user_name, u.email AS user_email, u.phone AS user_phone,
                     oi.product_id
              FROM orders o
@@ -1002,8 +1002,8 @@ function processBookingOrders(int $limit = 20): array
                 // order pelunasan (DP sudah berkomisi sendiri → total = rate x harga penuh).
                 $ins = $pdo->prepare(
                     "INSERT INTO orders (order_number, user_id, subtotal, discount, setup_fee, total,
-                                         status, notes, referral_code, order_stage, parent_order_id, due_at, payment_gateway)
-                     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, 'settlement', ?, ?, ?)"
+                                         status, notes, referral_code, order_stage, parent_order_id, due_at, payment_gateway, utm_source)
+                     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, 'settlement', ?, ?, ?, ?)"
                 );
                 $ins->execute([
                     $settleNumber, (int) $b['user_id'],
@@ -1015,6 +1015,7 @@ function processBookingOrders(int $limit = 20): array
                     $b['referral_code'] ?: null,
                     (int) $b['id'], $dueAt,
                     ($b['payment_gateway'] === 'moota') ? null : $b['payment_gateway'], // moota diset ulang di bawah (kode unik)
+                    $b['utm_source'],
                 ]);
                 $settleId = (int) $pdo->lastInsertId();
 

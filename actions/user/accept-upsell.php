@@ -39,13 +39,13 @@ try {
     // Order sumber harus lunas; member harus pemiliknya, tamu cukup token yang cocok.
     if ($sessionUserId > 0) {
         $st = $pdo->prepare(
-            "SELECT id, user_id, referral_code FROM orders
+            "SELECT id, user_id, referral_code, utm_source FROM orders
              WHERE order_number = ? AND user_id = ? AND status = 'paid' LIMIT 1"
         );
         $st->execute([$sourceOrderNo, $sessionUserId]);
     } else {
         $st = $pdo->prepare(
-            "SELECT id, user_id, referral_code FROM orders
+            "SELECT id, user_id, referral_code, utm_source FROM orders
              WHERE order_number = ? AND status = 'paid' LIMIT 1"
         );
         $st->execute([$sourceOrderNo]);
@@ -131,12 +131,13 @@ try {
 
     $pdo->beginTransaction();
     $pdo->prepare(
-        "INSERT INTO orders (order_number, user_id, subtotal, total, status, payment_gateway, referral_code, notes)
-         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)"
+        "INSERT INTO orders (order_number, user_id, subtotal, total, status, payment_gateway, referral_code, notes, utm_source)
+         VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)"
     )->execute([
         $orderNumber, $userId, $price, $finalTotal, $orderGw,
         $sourceOrder['referral_code'] ?: null,
         'Upsell dari order ' . $sourceOrderNo,
+        $sourceOrder['utm_source'],
     ]);
     $orderId = (int) $pdo->lastInsertId();
 

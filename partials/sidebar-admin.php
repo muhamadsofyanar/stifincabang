@@ -258,6 +258,15 @@ $userEmail = $_SESSION['email'] ?? '';
       Analitik Penjualan
     </a>
 
+    <?php if (isAdmin()): ?>
+    <a href="<?= e(APP_URL) ?>/admin/acquisition" class="<?= $navClass('/admin/acquisition') ?>">
+      <svg class="<?= $iconClass('/admin/acquisition') ?>" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v9h9M21 12a9 9 0 1 1-9-9m3 0a7 7 0 0 1 6 6h-6z"/>
+      </svg>
+      Data Akuisisi
+    </a>
+    <?php endif; ?>
+
     <!-- Integrasi Claude — fitur premium, standalone (brand-tinted + glow tipis) -->
     <a href="<?= e(APP_URL) ?>/admin/mcp-integration"
        class="nav-claude<?= $isActive('/admin/mcp-integration') ? ' nav-claude-active' : '' ?> group flex items-center gap-3 px-3 py-2.5 mt-0.5 rounded-lg text-sm">

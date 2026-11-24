@@ -14,7 +14,7 @@ $product = null;
 if ($slug !== '') {
     try {
         $stmt = getDB()->prepare(
-            "SELECT id, name, slug, thumbnail, short_description, access_type, embed_html, embed_url
+            "SELECT *
                FROM products WHERE slug = ? AND status = 'active' AND access_page_enabled = 1 LIMIT 1"
         );
         $stmt->execute([$slug]);
@@ -68,6 +68,11 @@ if (!$authed && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Password salah. Periksa kembali password dari penjual.';
         }
     }
+}
+
+if ($authed && ($product['access_type'] ?? '') === 'canvas') {
+    require_once __DIR__ . '/canvas-render.php';
+    renderProductAccessCanvas(getDB(), (int) ($product['access_canvas_id'] ?? 0));
 }
 
 $appName    = getSetting('app_name', 'STIFIn Mulia');

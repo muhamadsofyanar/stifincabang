@@ -112,9 +112,9 @@ try {
     $paidAt = $isFree ? date('Y-m-d H:i:s') : null;
 
     $pdo->prepare(
-        'INSERT INTO orders (order_number, user_id, subtotal, discount, total, status, paid_at, referral_code)
-         VALUES (?, ?, ?, 0, ?, ?, ?, ?)'
-    )->execute([$orderNumber, $userId, $total, $total, $status, $paidAt, $refCode ?: null]);
+        'INSERT INTO orders (order_number, user_id, subtotal, discount, total, status, paid_at, referral_code, utm_source)
+         VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)'
+    )->execute([$orderNumber, $userId, $total, $total, $status, $paidAt, $refCode ?: null, $_SESSION['utm_source'] ?? null]);
     $orderId = (int) $pdo->lastInsertId();
 
     try {

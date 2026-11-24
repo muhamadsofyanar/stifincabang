@@ -336,13 +336,14 @@ try {
     $paidAt        = $isFree ? date('Y-m-d H:i:s') : null;
 
     $pdo->prepare(
-        'INSERT INTO orders (order_number, user_id, subtotal, discount, setup_fee, total, status, notes, paid_at, referral_code, coupon_id, coupon_code, order_stage, booking_fee)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO orders (order_number, user_id, subtotal, discount, setup_fee, total, status, notes, paid_at, referral_code, coupon_id, coupon_code, order_stage, booking_fee, utm_source)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     )->execute([
         $orderNumber, $userId, $subtotal, $discount, $setupFee, $total,
         $initialStatus, null, $paidAt, $affiliateCode ?: null,
         $couponId, $couponCodeUsed,
         $isBooking ? 'booking' : 'full', $isBooking ? $bookingFee : null,
+        $_SESSION['utm_source'] ?? null,
     ]);
     $orderId = (int) $pdo->lastInsertId();
 

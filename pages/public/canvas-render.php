@@ -36,7 +36,7 @@ function canvasOutput(string $html, int $lastModTs, bool $noStore = false): void
     // Jika halaman baru saja di-update (dalam 60 detik terakhir) atau diakses admin/staff,
     // atau di-bypass via ?nocache=1, paksa no-store / no-cache agar perubahan instan terlihat.
     $isRecentlyUpdated = (time() - $lastModTs < 60);
-    $forceFresh        = $noStore || $isRecentlyUpdated || isAdminOrStaff() || isset($_GET['nocache']);
+    $forceFresh        = $noStore || $isRecentlyUpdated || isAdminOrStaff() || isset($_GET['nocache']) || isset($_GET['utm_source']);
 
     if ($forceFresh) {
         // Rotator/Split Test atau update baru / admin preview:
@@ -305,13 +305,41 @@ HTML;
     exit;
 }
 
+function canvasAccessUnavailable(): void
+{
+    http_response_code(404);
+    header('Cache-Control: private, no-store');
+    echo 'Halaman akses produk tidak tersedia.';
+    exit;
+}
+
+// Dipanggil setelah pemeriksaan hak akses produk di halaman member atau reseller.
+function renderProductAccessCanvas(PDO $pdo, int $canvasId): void
+{
+    $stmt = $pdo->prepare("SELECT * FROM canvas_pages WHERE id = ? AND page_type = 'product_access'
+                           AND is_active = 1 AND mode IN ('builder', 'embed')");
+    $stmt->execute([$canvasId]);
+    $page = $stmt->fetch();
+    if (!$page) {
+        canvasAccessUnavailable();
+    }
+    renderCanvas($page, true, true);
+}
+
 /**
  * Render satu Canvas page ke output lalu exit().
  *
  * @param array $page Baris canvas_pages (FETCH_ASSOC).
  */
-function renderCanvas(array $page, bool $noStore = false): void
+function renderCanvas(array $page, bool $noStore = false, bool $productAccessGranted = false): void
 {
+    if (($page['page_type'] ?? '') === 'product_access') {
+        if (!$productAccessGranted && !isAdmin()) {
+            canvasAccessUnavailable();
+        }
+        $noStore = true;
+    }
+
     // ─── Redirect: teruskan ke URL lain (short-link/cloaking) ─────
     if (($page['page_type'] ?? '') === 'redirect') {
         renderCanvasRedirect($page);
@@ -566,7 +594,7 @@ function renderRotator(array $rotator): void
              FROM canvas_rotator_variants rv
              JOIN canvas_pages cp ON cp.id = rv.variant_canvas_id
              WHERE rv.rotator_id = ? AND rv.is_active = 1
-               AND cp.is_active = 1 AND cp.page_type <> 'rotator'
+               AND cp.is_active = 1 AND cp.page_type NOT IN ('rotator', 'product_access')
              ORDER BY rv.sort_order ASC, rv.id ASC"
         );
         $vs->execute([$rotatorId]);

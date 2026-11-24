@@ -194,6 +194,7 @@ $routes = [
     '#^/admin/chat-leads$#'                        => ['pages/admin/chat-leads.php',          []],
     '#^/admin/waitlist$#'                          => ['pages/admin/waitlist.php',            []],
     '#^/admin/activity-logs$#'                     => ['pages/admin/activity-logs.php',       []],
+    '#^/admin/acquisition$#'                       => ['pages/admin/acquisition.php',         []],
     '#^/admin/funnel-analytics$#'                  => ['pages/admin/funnel-analytics.php',    []],
     '#^/admin/license$#'                           => ['pages/admin/license.php',             []],
     '#^/admin/license-activate$#'                  => ['pages/admin/license-activate.php',    []],

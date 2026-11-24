@@ -59,7 +59,7 @@ try {
     } catch (Throwable $e) { /* tabel rotator belum ada (pra-migrasi) */ }
 
     // Kandidat varian = canvas non-rotator (untuk dropdown builder rotator).
-    $variantCandidates = array_values(array_filter($canvases, fn($c) => ($c['page_type'] ?? '') !== 'rotator'));
+    $variantCandidates = array_values(array_filter($canvases, fn($c) => !in_array($c['page_type'] ?? '', ['rotator', 'product_access'], true)));
 
     $products = $pdo->query(
         "SELECT id, name, slug FROM products WHERE status = 'active' ORDER BY name ASC"
@@ -91,6 +91,7 @@ $typeBadge = function (string $type): string {
         'homepage'        => ['bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', 'Homepage'],
         'product_landing' => ['bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', 'Landing Produk'],
         'rotator'         => ['bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', 'Split Test'],
+        'product_access'  => ['bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300', 'Halaman Akses Produk'],
         'redirect'        => ['cv-redir-badge', 'Redirect'],
         default           => ['bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300', 'Mandiri'],
     };
@@ -189,6 +190,7 @@ generateCSRF();
                           class="w-full px-3 h-9 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[var(--brand-color)] focus:border-transparent transition">
                     <option value="standalone">Halaman Mandiri (/slug)</option>
                     <option value="homepage">Homepage Override (/)</option>
+                    <option value="product_access">Halaman Akses Produk</option>
                     <option value="product_landing">Landing Page Produk</option>
                     <option value="lead_magnet_landing">Landing Page Lead Magnet</option>
                     <option value="rotator">Rotator / Split Test</option>
@@ -671,7 +673,7 @@ generateCSRF();
 
                         <span class="cv-sep"></span>
 
-                        <?php if ((int) $c['is_homepage'] === 0): ?>
+                        <?php if ((int) $c['is_homepage'] === 0 && $c['page_type'] !== 'product_access'): ?>
                         <!-- Set Homepage -->
                         <form method="POST" action="<?= e($appBase) ?>/actions/admin/save-canvas" class="inline">
                           <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token']) ?>">
@@ -883,6 +885,9 @@ generateCSRF();
   function toggleRotatorUI() {
     var isRot      = elPageType.value === 'rotator';
     var isRedirect = elPageType.value === 'redirect';
+    var isAccess = elPageType.value === 'product_access';
+    elMode.querySelector('option[value="upload"]').disabled = isAccess;
+    if (isAccess && elMode.value === 'upload') elMode.value = 'builder';
     document.getElementById('cRotatorBlock').classList.toggle('hidden', !isRot);
     var rb = document.getElementById('cRedirectBlock');
     if (rb) rb.classList.toggle('hidden', !isRedirect);

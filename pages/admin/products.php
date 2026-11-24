@@ -122,6 +122,11 @@ $availableCanvases = [];
 try {
     // Sertakan homepage Canvas juga — boleh dipakai sbg landing produk. Homepage
     // diurut paling atas + ditandai agar admin tahu itu halaman utama.
+    $accessCanvases = getDB()->query(
+        "SELECT id, title FROM canvas_pages
+         WHERE is_active = 1 AND page_type = 'product_access' AND mode IN ('builder', 'embed')
+         ORDER BY title"
+    )->fetchAll();
     $availableCanvases = getDB()->query(
         "SELECT id, title, slug, page_type, is_homepage FROM canvas_pages
          WHERE is_active = 1 AND page_type IN ('standalone','product_landing','homepage')
@@ -905,7 +910,20 @@ generateCSRF();
                       class="w-full px-3 py-2 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[var(--brand-color)]">
                 <option value="course">Kelas / Modul (default) — konten via Modul &amp; Materi</option>
                 <option value="embed">Embed langsung — satu konten HTML/URL, tanpa kelas</option>
+                <option value="canvas">Canvas — Halaman Akses Produk</option>
               </select>
+              <div id="accessCanvasFields" class="hidden space-y-1">
+                <label for="productAccessCanvasId" class="block text-xs font-medium text-gray-500 dark:text-gray-400">Canvas untuk pembeli</label>
+                <select name="access_canvas_id" id="productAccessCanvasId" class="w-full px-3 h-9 rounded-lg text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                  <option value="">Pilih Halaman Akses Produk</option>
+                  <?php foreach ($accessCanvases ?? [] as $accessCanvas): ?>
+                    <option value="<?= (int) $accessCanvas['id'] ?>"><?= e($accessCanvas['title']) ?></option>
+                  <?php endforeach; ?>
+                </select>
+                <?php if (empty($accessCanvases)): ?>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Buat dan aktifkan Halaman Akses Produk di menu Canvas.</p>
+                <?php endif; ?>
+              </div>
               <div id="embedFields" class="hidden space-y-3 pt-1">
                 <div>
                   <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Kode Embed (HTML)</label>
@@ -1484,6 +1502,7 @@ function openProductModal(product, opts) {
     document.getElementById('salespageFields').classList.toggle('hidden', product.salespage_enabled != 1);
     document.getElementById('productAccessEnabled').checked = (product.access_page_enabled == 1);
     document.getElementById('productAccessType').value     = product.access_type || 'course';
+    document.getElementById('productAccessCanvasId').value = product.access_canvas_id || '';
     document.getElementById('productEmbedHtml').value      = product.embed_html || '';
     document.getElementById('productEmbedUrl').value       = product.embed_url || '';
     syncAccessType();
@@ -1575,6 +1594,7 @@ function openProductModal(product, opts) {
     document.getElementById('salespageFields').classList.add('hidden');
     document.getElementById('productAccessEnabled').checked = false;
     document.getElementById('productAccessType').value = 'course';
+    document.getElementById('productAccessCanvasId').value = '';
     document.getElementById('productEmbedHtml').value = '';
     document.getElementById('productEmbedUrl').value = '';
     syncAccessType();
@@ -1619,6 +1639,8 @@ function openProductModal(product, opts) {
 function syncAccessType() {
   var v = document.getElementById('productAccessType').value;
   document.getElementById('embedFields').classList.toggle('hidden', v !== 'embed');
+  document.getElementById('accessCanvasFields').classList.toggle('hidden', v !== 'canvas');
+  document.getElementById('productAccessCanvasId').required = v === 'canvas';
 }
 
 // ── Pratinjau embed "Lihat sebagai pembeli" (client-side, tak perlu simpan) ──

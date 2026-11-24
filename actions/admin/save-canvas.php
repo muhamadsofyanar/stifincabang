@@ -347,8 +347,19 @@ try {
                 }
             }
 
-            if (!in_array($pageType, ['standalone', 'homepage', 'product_landing', 'rotator', 'lead_magnet_landing', 'redirect'], true)) {
+            if (!in_array($pageType, ['standalone', 'homepage', 'product_landing', 'rotator', 'lead_magnet_landing', 'redirect', 'product_access'], true)) {
                 $errors[] = 'Tipe halaman tidak valid.';
+            }
+
+            if ($pageType === 'product_access' && !in_array($mode, ['builder', 'embed'], true)) {
+                $errors[] = 'Halaman Akses Produk menggunakan Visual Builder atau Embed HTML.';
+            }
+            if (($existing['page_type'] ?? '') === 'product_access' && $pageType !== 'product_access') {
+                $linkedAccess = $pdo->prepare("SELECT 1 FROM products WHERE access_type = 'canvas' AND access_canvas_id = ? LIMIT 1");
+                $linkedAccess->execute([$id]);
+                if ($linkedAccess->fetchColumn()) {
+                    $errors[] = 'Lepaskan tautan Canvas pada Mode Akses Konten produk sebelum mengganti tipe halaman.';
+                }
             }
 
             // Redirect wajib punya URL tujuan http(s) valid.
@@ -389,7 +400,7 @@ try {
                 if ($rotatorVariants) {
                     $ids = array_column($rotatorVariants, 'canvasId');
                     $ph  = implode(',', array_fill(0, count($ids), '?'));
-                    $vst = $pdo->prepare("SELECT id FROM canvas_pages WHERE id IN ($ph) AND page_type <> 'rotator'");
+                    $vst = $pdo->prepare("SELECT id FROM canvas_pages WHERE id IN ($ph) AND page_type NOT IN ('rotator', 'product_access')");
                     $vst->execute($ids);
                     $validCv = array_map('intval', array_column($vst->fetchAll(), 'id'));
                     $rotatorVariants = array_values(array_filter($rotatorVariants, fn($v) => in_array($v['canvasId'], $validCv, true)));
@@ -648,8 +659,14 @@ try {
                 flash('error', 'Slug tidak valid.', 'error');
                 redirect('/admin/canvas');
             }
+            $candidate = $pdo->prepare("SELECT id FROM canvas_pages WHERE slug = ? AND page_type <> 'product_access'");
+            $candidate->execute([$slug]);
+            if (!$candidate->fetchColumn()) {
+                flash('error', 'Canvas tidak tersedia untuk dijadikan homepage.', 'error');
+                redirect('/admin/canvas');
+            }
             $pdo->exec("UPDATE canvas_pages SET is_homepage = 0 WHERE is_homepage = 1");
-            $pdo->prepare("UPDATE canvas_pages SET is_homepage = 1, is_active = 1 WHERE slug = ?")
+            $pdo->prepare("UPDATE canvas_pages SET is_homepage = 1, is_active = 1 WHERE slug = ? AND page_type <> 'product_access'")
                 ->execute([$slug]);
             flash('success', 'Homepage Canvas aktif.');
             redirect('/admin/canvas');

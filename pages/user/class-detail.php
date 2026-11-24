@@ -61,6 +61,11 @@ try {
         redirect($previewMode ? '/admin/content' : '/member');
     }
 
+    if ($ownerType === 'product' && ($product['access_type'] ?? '') === 'canvas') {
+        require_once __DIR__ . '/../public/canvas-render.php';
+        renderProductAccessCanvas($pdo, (int) ($product['access_canvas_id'] ?? 0));
+    }
+
     // ─── Mode Akses "Embed langsung" → render embed di layout member, skip kelas ──
     if (($product['access_type'] ?? 'course') === 'embed') {
         include __DIR__ . '/embed-access.php';   // memakai $product, $previewMode; berakhir exit

@@ -361,6 +361,7 @@ $periodTabs = ['today' => 'Hari ini', 'yesterday' => 'Kemarin', '7' => '7 Hari',
                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">WhatsApp</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Produk</th>
                 <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Affiliate</th>
+                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sumber</th>
                 <th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Total</th>
                 <th class="text-center px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                 <th class="text-right px-5 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
@@ -448,6 +449,7 @@ $periodTabs = ['today' => 'Hari ini', 'yesterday' => 'Kemarin', '7' => '7 Hari',
                     <span class="text-xs text-gray-300 dark:text-gray-600">Langsung</span>
                   <?php endif; ?>
                 </td>
+                <td class="px-4 py-3.5 text-gray-700 dark:text-gray-300 break-all"><?= e($order['utm_source'] ?? '—') ?></td>
                 <td class="px-4 py-3.5 text-right font-semibold text-gray-900 dark:text-white">
                   <?= (float)$order['total'] > 0 ? e(formatRupiah((float)$order['total'])) : '<span class="text-green-600 dark:text-green-400 font-medium text-xs">Gratis</span>' ?>
                 </td>

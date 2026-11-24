@@ -180,6 +180,16 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Simpan sumber bertanda terakhir selama sesi checkout.
+$utmSource = $_GET['utm_source'] ?? null;
+if (is_string($utmSource)) {
+    $utmSource = strtolower(trim($utmSource));
+    if (preg_match('/\A[a-z0-9][a-z0-9_.-]{0,99}\z/', $utmSource)) {
+        $_SESSION['utm_source'] = $utmSource;
+    }
+}
+unset($utmSource);
+
 // Tangkap ?ref= query param secara global dan simpan cookie referral
 if (!empty($_GET['ref'])) {
     $refParam = preg_replace('/[^A-Z0-9]/', '', strtoupper(trim((string) $_GET['ref'])));
