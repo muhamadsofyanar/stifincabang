@@ -13,6 +13,22 @@
  * dalam $pdo->beginTransaction() (pola existing kedua jalur dipertahankan).
  */
 
+function orderRecordUtmSource(PDO $pdo, int $orderId, ?string $source): void
+{
+    if ($source === null || $source === '') {
+        return;
+    }
+    try {
+        $pdo->prepare('UPDATE orders SET utm_source = ? WHERE id = ?')->execute([$source, $orderId]);
+    } catch (PDOException $e) {
+        // Instalasi sebelum migrasi atribusi tetap bisa menerima order.
+        if ((int) ($e->errorInfo[1] ?? 0) !== 1054 || strpos($e->getMessage(), 'utm_source') === false) {
+            throw $e;
+        }
+    }
+}
+
+
 if (!function_exists('orderProcessFlashBonuses')) {
     /**
      * Proses pilihan "Bonus Kilat" (produk premium GRATIS berbatas waktu) saat checkout.

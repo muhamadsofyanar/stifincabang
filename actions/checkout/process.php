@@ -309,17 +309,17 @@ try {
 
     // INSERT order
     $stmt = $pdo->prepare(
-        'INSERT INTO orders (order_number, user_id, subtotal, discount, setup_fee, total, status, notes, paid_at, referral_code, coupon_id, coupon_code, order_stage, booking_fee, utm_source)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO orders (order_number, user_id, subtotal, discount, setup_fee, total, status, notes, paid_at, referral_code, coupon_id, coupon_code, order_stage, booking_fee)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     $stmt->execute([
         $orderNumber, $userId, $subtotal, $discount, $setupFee, $total,
         $initialStatus, $notes ?: null, $paidAt, $refCode ?: null,
         $couponId, $couponCode,
         $isBooking ? 'booking' : 'full', $isBooking ? $bookingFee : null,
-        $_SESSION['utm_source'] ?? null,
     ]);
     $orderId = (int) $pdo->lastInsertId();
+    orderRecordUtmSource($pdo, $orderId, $_SESSION['utm_source'] ?? null);
 
     // Poin Reward: potong saldo (ledger) + simpan jejak di order. Masih di dalam
     // transaksi yang sama dengan pembuatan order → atomik: order & pemotongan poin
